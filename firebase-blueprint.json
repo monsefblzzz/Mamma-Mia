@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile containing authentication and role data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "zone": { "type": "string" },
+        "role": { "type": "string", "enum": ["CLIENTE", "CAMARERO", "COCINA", "REPARTIDOR", "ENCARGADO", "JEFE"] },
+        "verified": { "type": "boolean" },
+        "hasUsedWelcomeCoupon": { "type": "boolean" },
+        "vapidKey": { "type": "string" },
+        "savedAddresses": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "phone", "role"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customer": { "type": "string" },
+        "phone": { "type": "string" },
+        "time": { "type": "string" },
+        "date": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "items": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["PENDIENTE", "PREPARANDO", "LISTO", "EN_REPARTO", "COMPLETADO"] },
+        "type": { "type": "string", "enum": ["DOMICILIO", "RECOGIDA", "MESA"] },
+        "total": { "type": "number" },
+        "address": { "type": "string" },
+        "table": { "type": "string" },
+        "paymentMethod": { "type": "string", "enum": ["EFECTIVO", "TARJETA", "PAYPAL", "BIZUM"] }
+      },
+      "required": ["customer", "status", "type", "total", "items"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Collection of user profiles"
+    },
+    "orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Collection of customer orders"
+    }
+  }
+}

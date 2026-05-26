@@ -1,0 +1,448 @@
+export const rawCustomersText = `
+ aLICIA  c/ Academia Valenciana N°58B  Nules  636819880  ---
+ Nuria  c/ padre tomas lucas 1  Nules (Castellon)  626225405  ---
+-  c/ Calle Cervantes N°57  Nules (Castellon)  644951247  ---
+--  c/ Avinguda Plana Baixa n°82 1°pta 1  Playa Nules  633599691  ---
+---  c/ Cova Santa 17  VilaVella  679438361  ---
+---  c/ Tarongers n°2  Nules  647659599  ---
+---  c/   Nules (Castellon)  641145963  ---
+---  c/ 9 de octubre n° 24 e  Nules (Castellon)  665669992  ---
+---  c/ extramuros n°9 (fuera de la muralla)  mascarell (Castellon)  667589075  ---
+---  Avda. VALENCIA N°135 1° DERECHA  Nules (Castellon)  648511557  ---
+---  c/ san vicente n°49 2° p°e  Nules (Castellon)  665568589  ---
+---  c/ SANTA NATALIA n° 52 2°b  Nules (Castellon)  663590003  ---
+---  c/ francesc esquerrer n°36 5°  Nules (Castellon)  669247177  ---
+---  c/ fra asensi nebot n°8  casal  Nules (Castellon)  644249421  ---
+---  c/   artana (Castellon)  655978204  ---
+---  c/ San Miguel 22  Mascarell (Castellon)  685695259  ---
+---  c/   Nules (Castellon)  654945824  ---
+---  c/   Nules (Castellon)  669058027  ---
+---  c/   Nules  651419476  ---
+---  c/   Nules (Castellon)  627886397  ---
+---  c/   Nules (Castellon)  658415398  ---
+---  c/ san antonio n°45 2°  vilavieja (Castellon)  654769556  ---
+---  c/ virgen de los dolores n°116 2° piso puerta 9  Nules (Castellon)  636074200  ---
+---  c/ buenavista n°8 1° a  Nules (Castellon)  652390834  ---
+---  c/ rafael katala lucas n°11   Nules (Castellon)  652702048  ---
+---  c/   Nules (Castellon)  636617172  ---
+---  c/ GUILLEM DE MONCADA N°13   Nules (Castellon)  660156548  ---
+---  c/ san roque 34  Nules (Castellon)  670332609  ---
+---  c/ san pablo n°9  Nules (Castellon)  627516507  ---
+---  Avda. castellon n° 49 cochera  Nules (Castellon)  692544397  ---
+---  Avda. CONSTITUCIO N°71 ESCALERA B 7° 2°  Nules (Castellon)  691687379  ---
+---  c/ bechi n°6 1°a   Nules (Castellon)  653437591  ---
+---  Pl. juan xxiii n° 8   vilavieja (Castellon)  644971377  ---
+---  c/ grupo 1 de mayo esc 2 pta6  Nules (Castellon)  671886397  ---
+---  c/ centro de salud   Nules (Castellon)  651537464  ---
+---  c/ virgen del carmen   mascarell (Castellon)  626297148  ---
+---  Avda. marques de santa cruz n° 16  Nules (Castellon)  628288229  ---
+---  c/ enrique giner n°7 planta baixa  Nules (Castellon)  676337736  ---
+---  c/ olivereta  Nules (Castellon)  659645023  ---
+---  c/ grupo Ines Alcazar N°6 piso 7 pta 21  Nules (Castellon)  672240186   
+---  c/   Nules (Castellon)  633456378  ---
+---  c/   Nules (Castellon)  684300875  ---
+---  c/ isabel la catolica n°14   vilavieja (Castellon)  675433059  ---
+---  c/   Nules (Castellon)  642237501  ---
+---  c/   Nules (Castellon)  696332014  ---
+---  c/   Nules (Castellon)  698940339  ---
+---  c/ sant josep n°12   Nules (Castellon)  662463146  ---
+---  c/   Nules (Castellon)  645959429  ---
+---  c/   Nules (Castellon)  653236665  ---
+---  c/   Nules (Castellon)  606366075  ---
+---  c/ san ramon n°8   artana (Castellon)  649936309  ---
+---  c/   Nules (Castellon)  638683214  ---
+---  c/   Nules (Castellon)  679534856  ---
+---  c/   Nules  641157480  ---
+---  c/ sagrada familia n°3 puerta 4  Nules (Castellon)  643911432  ---
+---  c/ Enrique Giner 8  Nules (Castellon)  693706615  ---
+---  c/   Nules (Castellon)  621086520  ---
+---  c/   Nules (Castellon)  667819390  ---
+---  c/   Nules (Castellon)  686088774  ---
+---  c/   Nules (Castellon)  603754513  ---
+---  Avda. Marques De Santa Cruz N°40 2°A  Nules  635204183  ---
+---  c/   Nules  666546645  ---
+---  c/   Nules (Castellon)  722226092  ---
+---  c/ santa natalia n°80  Nules (Castellon)  649198525  ---
+---  c/ del pou n°10  vilavieja (Castellon)  669207355  ---
+---  c/ carretera vilavieja  n°51 piso 3 pta 15  Nules (Castellon)  674327507  ---
+---  c/ Bechí n°6 1°A  Nules  650416224  ---
+---  c/ Virgen Del Carmen 27  Nules  673162948  ---
+---  c/   Nules  611083823  ---
+---  c/ Santa Natalia 25 1°  Nules  619425524  ---
+---  c/   Nules (Castellon)  640035743  ---
+---  c/ san agustin n°56 3-8  Nules (Castellon)  679276609  ---
+---  c/ santa natalia n°50 bar la taberna  Nules (Castellon)  643604160  ---
+---  Pl. Asuncion 10   Nules  684112408  ---
+---  c/ Chilches n°14 1°F  Nules  675117492   
+---  c/ xilxes n°3 2°a  Nules (Castellon)  653050726  ---
+---  c/ san vicent n°59 2C  vilavieja (Castellon)  722433450  ---
+---  c/ milagros n°50 casal  Nules (Castellon)  622403765  ---
+---  c/ santa cecilia n°55 bajoB   Nules (Castellon)  651944788  ---
+---  c/ lope de vega n°7  Nules (Castellon)  661281926  ---
+---  c/ fransec esquerre n°22 3°A (roberto javier)  Nules (Castellon)  659022906  ---
+---  c/   Nules (Castellon)  602464145  ---
+---  c/   Nules (Castellon)  635243005  ---
+---  grupo ines alcazar bartrina esc2 prt4  Nules (Castellon)  624314022  ---
+---  c/ doctor marañon n°32  Nules (Castellon)  630889407  ---
+---  Avda. valencia n° 19 piso 5°B  Nules (Castellon)  633952491  ---
+---  c/ san bartolome n°50 plt.6 prt.11  Nules (Castellon)  699171522  ---
+---  c/ cami real n°35 3°B   Nules (Castellon)  602470969  ---
+---  Avda. Castellon 16 1° pta1  Nules  771017692  ---
+---  c/ artana n°2 bajo  Nules (Castellon)  643258633  ---
+---  c/   Nules (Castellon)  623108581  ---
+---  Avda. valencia n°28 1°F  Nules (Castellon)  618859477  ---
+---  c/ federico garcia lorca n°2  Nules (Castellon)  634660026  ---
+---  c/ Vall Duxo 37 3B  Nules  657267716  ---
+---  c/ major n°71  Nules (Castellon)  622392448  ---
+---  c/ san joaquin n°47  Nules (Castellon)  692481705  ---
+---  c/ francesc esquerrer n°36 puerta16(3)  Nules (Castellon)  635809998  ---
+---  c/ chilches n°14 p°3F  Nules (Castellon)  616076462  ---
+---  POU LLEVAR RAFA  Nules (Castellon)  657426039  ---
+---  c/   Nules (Castellon)  656712896  ---
+---  c/ madre de deu del dolors n°1 p°2  Nules (Castellon)  617314595  ---
+---  c/ Federico Garcia Lorca 11  Nules (Castellon)  691722136  ---
+---  c/   Nules (Castellon)  633552006  ---
+---  c/   Nules (Castellon)  695302142   
+---  c/ la pau n°24 patio  Nules (Castellon)  633282728  ---
+---  c/ santa natalia n°60 canton semaforo tuka  Nules (Castellon)  651397923  ---
+---  c/ san pascual n°44   Nules (Castellon)  625672944  ---
+---  c/   Nules (Castellon)  642689019  ---
+---  c/   Nules (Castellon)  622197575  ---
+---  avda marques de santa cruz n°6 1°A  Nules (Castellon)  606666975  ---
+---  c/ nueve de octubre n°30   Nules (Castellon)  636054609  ---
+---  c/   Nules (Castellon)  660170361  ---
+---  c/ madre maria rosa molas n°20 ads24  Nules (Castellon)  619239392  ---
+---  c/ carretera vilavieja n°19  Nules (Castellon)  619244923  ---
+---  c/ la llosa n°29 2° pta 11  Nules (Castellon)  652687882  ---
+---  virgen del carmen n°9  Nules (Castellon)  629676374  ---
+---  c/   Nules (Castellon)  66206396  ---
+---  c/ san bartolome n°50 planta 6 puerta11  Nules (Castellon)  680544455  ---
+---  Pl. clemenules n°2  Nules (Castellon)  651835034  ---
+---  c/   Nules  653601616  ---
+---  c/ Molinet N°7 3°E  Villavieja  647648486   
+---  c/ europa 7  Nules (Castellon)  686470976  ---
+---  c/ Cami Real 35  Nules (Castellon)  618482792  ---
+---  c/ San Joaquin 79 3o  Nules (Castellon)  672525108  ---
+---  c/ extramuros n°9   mascarell (Castellon)  717771424  ---
+---  c/ SAN ROC 61  vILAVELLA  615674160  ---
+---  c/ san vicente n°13 piso 2   Nules (Castellon)  642808137  ---
+---  Avda. PLANA BAIXA N°86 PISO 2 PTA 3  PLAYA Nules (Castellon)  644768040  ---
+---  c/ san vicente n°103 2°A  Nules (Castellon)  607394490  ---
+---  Pl. la pedrera n°2  vilavieja (Castellon)  606514890  ---
+---  c/   Nules (Castellon)  66107338  ---
+---   teatro alcazar   Nules (Castellon)  656634283  ---
+---  c/ jose bertomeu n°56  Nules (Castellon)  694404646  ---
+---  c/ cortes valencianas n°21   Nules (Castellon)  685160227  ---
+---  c/   Nules  650878879  ---
+---  c/ Almirall Gravina 15 4°C  Playa Moncofar  605993525  ---
+---  c/ SANTA NATALIA (CRUZ)  Nules (Castellon)  688926803  ---
+---  c/ virgen del carmen n°60 3°b  Nules (Castellon)  625565576  ---
+---  c/   Nules  629950095  ---
+---  c/   Nules  676018897  ---
+---  c/ campo futbol   Artana (Castellon)  679206927  ---
+---  c/ francisco montoliu n°8  Nules (Castellon)  644590299  ---
+---  cami real n°35 casal  vilavieja  665024074  ---
+---  c/ Virgen de los Dolores 1 Felip  Nules  636044714  ---
+---  c/ Padre Tomas Lucas 35  Nules (Castellon)  615904680  ---
+---  c/   Nules (Castellon)  607625106  ---
+---  c/   Nules (Castellon)  608138704  ---
+---  c/ isaaac peral n30 B  Nules (Castellon)  622684959  ---
+---  c/ virgen de la soledad n°51 2°  Nules (Castellon)  653174709  ---
+---  c/ san cristobal n°2  Nules (Castellon)  615490584  ---
+---  Avda. castellon n°14 timbre2  Nules (Castellon)  619248119  ---
+---  c/ purisima n°16 1°izq 1° timbre  Nules (Castellon)  623001288  ---
+---  c/ la llosa n°7  Nules (Castellon)  654596165  ---
+---  c/ Element Fresh Navil  Nules  627137078  ---
+---  c/ Carretera Vilavieja 30  Nules  644952256  ---
+---  c/ san pascual n°110 2°  Nules (Castellon)  629975886  ---
+---  c/ mallorca enfrente 102 al lado consum  Nules (Castellon)  633065170  ---
+---  c/   Nules  645906776  ---
+---  c/   Nules  658359215  ---
+---  c/   Nules  683856938  ---
+---  c/   Nules  617665602  ---
+---  c/   Nules (Castellon)  664093962  ---
+---  c/   Nules  640181399  ---
+---  c/ grupo ines alcazar esc 4 septimo puerta 13  Nules  643909117  ---
+---  c/ vall d'ixo 26 1  Nules (Castellon)  623128678  ---
+---  c/   Nules  645845410  ---
+---  c/ bar 47  Nules (Castellon)  654269539  ---
+---  c/   Nules  626141980  ---
+---  c/ bar agut  Nules (Castellon)  654490799  ---
+---  c/   Nules  642790292  ---
+---  c/   Nules  678129539  ---
+---  c/   Nules  610767259  ---
+---  c/   Nules  658644965  ---
+---  c/   Nules  600832742  ---
+---  c/   Nules  698301914  ---
+---  c/   Nules  686287717  ---
+---  c/ San pascual n83  Nules (Castellon)  635458269  ---
+---  c/   Nules  611443915  ---
+---  c/   Nules  669577632  ---
+---  c/   Nules  638742712  ---
+---  c/   Nules  67002950  ---
+---  c/ Betxi n8 1°A  Nules  665403726   
+---  c/   Nules  615068965  ---
+---  c/   Nules  613001085   
+---  c/   Nules  625855362  ---
+---  c/   Nules  627749014  ---
+---  c/   Nules  685817788  ---
+---  c/   Nules  600414222  ---
+---  c/   Nules  615654362  ---
+---  c/   Nules  608677113  ---
+---  Avda. Mediterrani 101  Nules  722792157  ---
+---  c/   Nules (Castellon)  633218668  ---
+---  c/   Nules  674919316  ---
+---  c/   Nules (Castellon)  675542852  ---
+---  c/ CENTRO SALUD  Nules  630306333558550  ---
+---  c/   Nules (Castellon)  611160796  ---
+---  c/ cova santa 36  Nules (Castellon)  615285497  ---
+---  c/   Nules (Castellon)  607843188  ---
+---  c/   Nules (Castellon)  690270215  ---
+---  c/   Nules (Castellon)  645834009  ---
+---  c/   Nules (Castellon)  670807762  ---
+---  c/   Nules (Castellon)  625038322  ---
+---  c/   Nules (Castellon)  615067632  ---
+---  c/ santa natalia 94 (1 timbre solo)  Nules (Castellon)  679772706  ---
+---  c/ Francesc Esquerrer n°36 p.15  Nules (Castellon)  635524752  ---
+---  c/ valencia 145 4b  Nules (Castellon)  622756618  ---
+---  c/ federico garcia lorca 10  Nules (Castellon)  654972944  ---
+---  c/   Nules (Castellon)  687562524  ---
+---  c/   Nules (Castellon)  622703230  ---
+---  c/ bar agut  Nules (Castellon)  628121994  ---
+---  c/ Milagros n°48 1° p.1  Nules (Castellon)  678861573  ---
+---  c/   Nules (Castellon)  657645484  ---
+---  c/   Nules (Castellon)  685849139  ---
+---  c/ San Roc N°132 1°  Vilavieja (Castellon)  647821799  ---
+---  c/ element fresh  Nules (Castellon)  681372474  ---
+---  c/   Nules  647077297  ---
+---  c/   Nules  635791019  ---
+---  c/   Nules (Castellon)  625891605   
+---  c/   Nules  605242714  ---
+---  c/   Nules  647648489  ---
+---  c/   Nules (Castellon)  691701495  ---
+---  c/ Marco Antonio Orti derecha CASAL  Nules  665098218  ---
+---  c/   Nules  627671148  ---
+---  c/   Nules  617356670  ---
+---  c/   Nules  625157300  ---
+---  c/   Nules (Castellon)  665524223  ---
+---  c/   Nules (Castellon)  627044911  ---
+---  c/ san agustin 20 2b  Nules (Castellon)  644272480  ---
+---  c/   Nules (Castellon)  651157468  ---
+---  c/ Alquerías n°1 3°A  Nules (Castellon)  691522444   
+---  c/   Nules (Castellon)  659201291  ---
+---  c/   Nules (Castellon)  657275010  ---
+---  c/ francesc esquerrer 36 2 P12  Nules (Castellon)  622187943  ---
+---  c/   Nules (Castellon)  651141342  ---
+---  c/   Nules (Castellon)  654661565  ---
+---  c/   Nules  67960911  ---
+---  c/ Centro De Salud  Nules (Castellon)  646391303  ---
+---  c/   Nules (Castellon)  676248439  ---
+---  c/   Nules  655980837  ---
+---  c/   Nules  675993510  ---
+---  c/ virgen de los dolores n106 G PRIMERO  Nules  642413629  ---
+---  c/ buenavista 8 2a  Nules (Castellon)  633282901  ---
+---  c/ azucena 21  Nules (Castellon)  686827643  ---
+---  c/   Nules (Castellon)  624299335  ---
+---  c/ beranger 19 5° p10  Nules (Castellon)  644199569  ---
+---  c/   Nules  601162080  ---
+---  c/   Nules (Castellon)  608593358  ---
+---  c/   Nules (Castellon)  645692258  ---
+---  c/   Nules  684112408  ---
+---  c/ centre salud  Nules (Castellon)  664646122  ---
+---  c/   Nules (Castellon)  687520157  ---
+---  c/   Nules (Castellon)  650733988  ---
+---  c/ Benicato 24  Playa Nules  625450531  ---
+---  c/   Nules (Castellon)  645833417  ---
+---  c/   Nules  617130382  ---
+---  c/   Nules  663166627  ---
+---  c/ Isaac Peral 40 Timbre Manu  Nules  625823728  ---
+---  c/   Nules  661375384  ---
+---  Avda. Mallorca n°71 n°2 p8  Playa Nules  605015469   
+---  c/   Nules  653120456  ---
+---  c/ faustino valentino torrejon n6  Nules (Castellon)  616475159  ---
+---  c/   Nules  646313114  ---
+---  c/   Nules  633300537  ---
+---  c/   Nules  695347467  ---
+---  c/   Nules  642914726  ---
+---  c/ padre tomas lucas n2 4  Nules (Castellon)  625493475  ---
+---  c/ enrique giner 38  Nules  692538101  ---
+---  c/   Nules (Castellon)  655813976  ---
+---  c/ tomas lucas n2  Nules (Castellon)  678480808  ---
+---  c/ San Bartolomé n°64  Nules  675858661   
+---  c/ Alquerias N°8  Nules  6657842598  ---
+---  c/   Nules (Castellon)  645737403  ---
+---  c/ Grupo 1° Mayo Esc. 7 p.3  Nules  641728361  ---
+---  c/ santa barbara n6 3 izq  Nules  695759332  ---
+---  c/ Francesc Ezquerrer n°36 1° p.3 timbre 3  Nules  690074132  ---
+---  c/ alqueries n51  Nules (Castellon)  625997462  ---
+---  c/ Las Torres s/n  Nules (Castellon)  656572757  ---
+---  c/   Nules  651657053  ---
+---  c/   Nules  639490038  ---
+---  c/   Nules  603262405  ---
+---  c/ grespania  Nules  670252386  ---
+---  c/ cuartel guardia civil  Nules  625238022  ---
+---  c/ San Cristobal N°36 1° 1°  Nules  656679725  ---
+---  c/ felix bueno n3  3puerta5  Nules  619959679  ---
+---  c/   Nules  657328253  ---
+---  c/   Nules  640588545  ---
+---  c/ enrique giner n3 2D  Nules (Castellon)  621048162  ---
+---  c/ Isabel Ferrer N°11 1°E  Nules  667097508   
+---  c/ Ramon y Cajal n°3  1A  Nules (Castellon)  635324966   
+---  c/ del cervelló n3  Villavieja (Castellon)  658427887  ---
+---  c/   Nules (Castellon)  645076159  ---
+---  c/   Nules (Castellon)  643139599  ---
+---  c/   Nules (Castellon)  651157475  ---
+---  c/ doctor marañon 15 1o   vilavieja  622192757   
+---  c/   Nules  685107663  ---
+---  c/ plaça espardenyers n12 2°  Villavieja  653248094  ---
+---  c/   Nules  659822008  ---
+---  c/   Nules  622610381  ---
+---  c/ Santa Cecilia N°76  Nules  631420216  ---
+---  c/ 9 de Octubre n°15  Nules  654041347  ---
+---  c/   Nules (Castellon)  625536662  ---
+---  c/ vicente ballester fandos n5 2A  Nules (Castellon)  654544010  ---
+---  c/   Nules (Castellon)  632648577  ---
+---  c/ Diagonal N°10 1°  Nules  642595366  ---
+---  c/ Enrique Giner N°96 3°  Nules  634574491   
+---  c/   Nules (Castellon)  642021977  ---
+---  Carretera Villaviejja 55 1°   Nules (Castellon)  699641708  ---
+---  c/   Nules (Castellon)  622307100  ---
+---  c/ isaaac peral n33  Nules (Castellon)  645874030  ---
+---  c/   Nules (Castellon)  600135064  ---
+---  c/   Nules  649669638  ---
+---  c/   Nules (Castellon)  629864682  ---
+---  c/ San Vicente N°105 Piso2 P°5  Nules (Castellon)  674501258  ---
+---  c/   Nules (Castellon)  667557786  ---
+---  URB AZAHAR N11  Nules (Castellon)  629451872   
+---  c/ San Pablo N°3 4° P°8  Nules (Castellon)  653136895  ---
+---  c/ xilxes n°20 3°B lopez arroyo  Nules (Castellon)  643408618  ---
+---  c/ marques de santa cruz n°8 3° p9  Nules (Castellon)  600533736  ---
+---  c/ san vicente n°121 2J  Nules (Castellon)  692254744  ---
+---  c/ San Mateo n°8 Bajo  Nules (Castellon)  633117400  ---
+---  c/ betxi n°21 4° p14  Nules (Castellon)  656884531  ---
+---  c/   Nules (Castellon)  657643536  ---
+---  c/ santa natalia n°50  Nules (Castellon)  675916587  ---
+---  c/   Nules (Castellon)  643377271  ---
+---  c/ la mar n°6 p°3  Nules (Castellon)  675568407  ---
+---  c/   Nules (Castellon)  619890935  ---
+---  c/   Nules (Castellon)  614325281  ---
+---  c/ Grupo Ines Alcazar N°2 P°4  Nules (Castellon)  641911094  ---
+---  c/   vilavieja (Castellon)  625666517   
+---  c/ Xilxes N10 2A  Nules (Castellon)  685972552  ---
+---  Avda. Mallorca N16  Playa Nules (Castellon)  609315594   
+---  c/ San Bartolome N58  Nules (Castellon)  665767437  ---
+---  Avda. Generalitat Valenciana N35  Nules (Castellon)  615053172  ---
+---  Avda. Diagonal N30 2°  Nules (Castellon)  629608349  ---
+---  c/ Eslida N9 3° V.Oliver  Nules (Castellon)  655062328  ---
+---  c/   Nules (Castellon)  660486369  ---
+---  c/   Nules (Castellon)  658097741  ---
+---  c/   Nules (Castellon)  681647660  ---
+---  c/   Nules (Castellon)  686242296  ---
+---  c/ san antoni n°7  Nules (Castellon)  664829197  ---
+---  c/   Nules  605177603  ---
+---  c/   Nules (Castellon)  656736565  ---
+---  c/ VIRGEN DEL CARMEN N°46  Nules (Castellon)  698732593  ---
+---  c/   Nules (Castellon)  625929888  ---
+---  c/ perpetuo socorro n°5 cochera  Nules (Castellon)  628674309  ---
+---  c/ Partida Bovalar  Nules (Castellon)  635186771  ---
+---  c/   Nules (Castellon)  675037547  ---
+---  c/ CORTS VALENCIANES N°25  Nules (Castellon)  645290736  ---
+---  c/ virgen de los dolores n°70   Nules (Castellon)  629769700  ---
+---  c/ l'oriet n°3  VV(Castellon)  639240568  ---
+---  c/   Nules (Castellon)  633680980  ---
+---  c/ san agustin n°37 1°E 5 campana  Nules (Castellon)  646349337  ---
+---  c/   Nules  692902064  ---
+---  c/ SAN MATEU N°14 1°  Nules (Castellon)  641157526  ---
+---  Avda. Mallorca n°19   Nules (Castellon)  652075513  ---
+---  c/ betxi n°5 3°A  Nules (Castellon)  651170013  ---
+---  Pl. virgen del pilar n°4  Nules (Castellon)  639740982  ---
+---  c/ grupo 1° mayo esc 7 p5   Nules (Castellon)  611975246  ---
+---  c/   Nules (Castellon)  605242196  ---
+---  c/   Nules  655672775  ---
+---  c/   Nules (Castellon)  635370021  ---
+---  c/   Nules (Castellon)  696652635  ---
+---  c/ santiago obon n°3 3°B llamr tlf  Nules (Castellon)  626660016  ---
+---  c/ BONAVISTA N°2 2  Nules (Castellon)  634424550  ---
+---  c/   Nules (Castellon)  646601593  ---
+---  c/ Marbella 58 bajo D  Moncofar (Castellon)  643944371  ---
+---  c/   Nules (Castellon)  601194691  ---
+---  c/   Nules (Castellon)  641690243  ---
+---  c/   Nules (Castellon)  636370299  ---
+---  c/ Virgen del carmen n°27  Nules  602244296  ---
+---  avda plana baixa,94 p1 pta 4  playa Nules (Castellon)  637946739  ---
+---  c/   Nules (Castellon)  627727706  ---
+---  c/   Nules (Castellon)  6714652918  ---
+---  c/   Nules (Castellon)  678130973  ---
+---  c/ santa ana n°24  Nules (Castellon)  643145864  ---
+---  c/   Nules (Castellon)  634443048  ---
+---  c/   Nules (Castellon)  646461417  ---
+---  c/ daniel fortea n°9 p°7  Nules (Castellon)  651838958  ---
+---  c/ Virgen del carmen 62 2°C  Nules  630627656  ---
+---  c/ Santa Barbara N56 2°  Nules (Castellon)  676730008   
+---  c/   Nules (Castellon)  639947579  ---
+---  c/ san rafael n°15  vilavieja(Castellon)  665370050  ---
+---  c/ santa natalia n°98 2°f  Nules (Castellon)  633861609  ---
+---  c/ cervantes n°29  Nules (Castellon)  633034442  ---
+---  c/   Nules (Castellon)  695611243  ---
+---  c/   Nules (Castellon)  652220451  ---
+---  c/   Nules (Castellon)  647511700  ---
+---  c/ santa ana n°28 1° 1°A  Nules (Castellon)  625131058  ---
+---  c/ PURISIMA N°4 1°B  Nules (Castellon)  642686420  ---
+---  c/ faustino valentin torrejon,2  Nules (Castellon)  692812530  ---
+---  c/   Nules (Castellon)  671223858  ---
+---  c/ sant vicent n°44 5  Nules (Castellon)  608378436  ---
+---  c/   Nules (Castellon)  616433184  ---
+---  c/   Nules (Castellon)  644959897  ---
+---  c/   Nules (Castellon)  652529924  ---
+---  c/   Nules (Castellon)  695526087  ---
+---  c/   Nules (Castellon)  635324601  ---
+---  c/   Nules (Castellon)  654850034  ---
+---  c/ nou d'octubre n°4  Nules (Castellon)  644102464  ---
+---  c/ la mar n°20 1°D  Nules (Castellon)  625933084  ---
+---  c/ matias torrejon n°45  Nules (Castellon)  665526728  ---
+---  c/ beranger n°18 2   Nules (Castellon)  654282792  ---
+---  c/ purisima n°24 cochera  Nules (Castellon)  615654862  ---
+---  c/   Nules (Castellon)  642554790  ---
+---  c/ santa ana n°37 cochera   Nules (Castellon)  633092883  ---
+---  c/ Sagrada Famila 13 1°1  Nules (Castellon)  633148726  ---
+---  c/ c/ academia valenciana de la llengua "55  Nules (Castellon)  679444172   
+---  c/   Nules (Castellon)  123  ---
+---  c/ vicente vallester fandos n°5 1°C  Nules (Castellon)  623532913  ---
+---  c/ sants la pedra 40 2°A  Nules (Castellon)  696534303  ---
+---  c/ calderon de la barca 72 3°1  Nules (Castellon)  641550183  ---
+---  c/   Nules (Castellon)  639678018  ---
+---  c/ RAFAL CATALA LUKAS KARPA 6c 12  Nules (Castellon)  645617775  ---
+---  c/ francesc esquerrer 36 2°12  Nules (Castellon)  631967762  ---
+---  c/   Nules (Castellon)  656901120  ---
+---  c/   Nules (Castellon)  635028224  ---
+---  c/ luis mendoza n°6   Nules (Castellon)  608868923  ---
+---  c/ SAN VICENT N°93 COCHERA ESQUINA  Nules (Castellon)  605384381  ---
+---  Avda. isabel la catolica n°12  Vilavieja (Castellon)  675547648   
+---  Avda. diagonal n°30 2   Nules (Castellon)  614098175  ---
+---  c/   Nules (Castellon)  633051167  ---
+---  c/ san roque n°93  vv  633761580  ---
+---  Avda. GENERALITAT VALENCIANA N°52  Nules (Castellon)  722128122  ---
+---  c/   Nules (Castellon)  634488791  ---
+---  c/   Nules (Castellon)  642687846  ---
+---  c/   Nules  635157752  ---
+---  c/ daniel fortea n°9 piso2 p5  Nules (Castellon)  692708663  ---
+---  c/   Nules (Castellon)  656874952  ---
+---  c/   Nules (Castellon)  645418069  ---
+---  c/   Nules (Castellon)  624248043  ---
+---  c/ academia valenciana de la lengua n°36  Nules (Castellon)  616452032  ---
+---  c/   Nules (Castellon)  696647963  ---
+---  c/   Nules (Castellon)  643477923  ---
+---  c/ San Bartolome n9  Nules (Castellon)  632207656  ---
+---  c/ pedro alcazar n°16 2°  Nules (Castellon)  628661398  ---
+---  c/   Nules (Castellon)  676570519  ---
+---  c/ san bartolome n°134 1°3  Nules (Castellon)  659428611  ---
+---  c/   Nules (Castellon)  603146992  ---
+---  c/ calvari n°7  Nules (Castellon)  621006309  ---
+---  c/   Nules (Castellon)  623263361  ---
+---  c/   Nules (Castellon)  645352388  ---
+---  c/ santa aurora n°18 c  Nules (Castellon)  659049521  ---
+---  c/   Nules (Castellon)  697407463  ---
+Alexandra  c/ Santa Cecilia N5  Nules (Castellon)  657469722   
+-  c/ ----  Nules  654654654  ---
+Aaron  c/   Nules  651484530  ---
+`;

@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,100..900;1,100..900&family=Inter:wght@100..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Epilogue", sans-serif;
+
+  --color-brand-primary: #ffcc00;
+  --color-brand-yellow: #ffc107;
+  --color-brand-red: #ea3224;
+  --color-brand-blue: #1c6ae4;
+  --color-brand-secondary: #1c6ae4;
+  --color-surface-base: #000000;
+  --color-surface-container: #111111;
+  --color-surface-bright: #222222;
+}
+
+@layer base {
+  body {
+    @apply bg-surface-base text-white font-sans antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+.neon-glow {
+  box-shadow: 0 0 15px rgba(255, 193, 7, 0.3);
+}
+
+.neon-glow-red {
+  box-shadow: 0 0 15px rgba(173, 2, 36, 0.3);
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-root, #print-root * {
+    visibility: visible;
+  }
+  #print-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white;
+    color: black;
+    padding: 20px;
+    margin: 0;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
