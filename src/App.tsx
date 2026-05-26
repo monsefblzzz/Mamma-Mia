@@ -12,8 +12,13 @@ import { ConfirmModal } from './components/ConfirmModal';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { dbService } from './db/DatabaseService';
 import { QRCodeSVG } from 'qrcode.react';
 import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
+
+import { AdminApp } from './pages/AdminApp';
+import { TauletaApp } from './pages/TauletaApp';
+import { AppCliente } from './pages/AppCliente';
 
 const PageWrapper = ({ children }: { children: React.ReactNode }) => (
     <motion.div
@@ -475,10 +480,11 @@ const MenuItemCard = ({
 
 const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [messages, setMessages] = React.useState<{ text: string, isUser: boolean }[]>([]);
+  const [messages, setMessages] = React.useState<{ text: string, isUser: boolean, isSystem?: boolean }[]>([]);
   const [input, setInput] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const { addToCart } = useStore();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -505,9 +511,32 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
         }),
       });
       const data = await response.json();
-      setMessages(prev => [...prev, { text: data.reply || data.error || 'Lo siento, hubo un error conectando con la IA.', isUser: false }]);
+      
+      setMessages(prev => [...prev, { text: data.reply || data.error || 'Lo siento, hubo un error de conexión.', isUser: false }]);
+      
+      if (data.order && (data.order.pizzas?.length > 0 || data.order.bebidas?.length > 0 || data.order.otros?.length > 0)) {
+        let addedCount = 0;
+        const processGroup = (group: any[]) => {
+            if(!group) return;
+            group.forEach(i => {
+               const matched = menuItems.find(m => m.name.toLowerCase().includes(i.name.toLowerCase()));
+               if (matched) {
+                   addToCart(matched, i.qty || 1, i.notes || '');
+                   addedCount++;
+               }
+            });
+        };
+        processGroup(data.order.pizzas);
+        processGroup(data.order.bebidas);
+        processGroup(data.order.otros);
+
+        if (addedCount > 0) {
+           setMessages(prev => [...prev, { text: `✅ Se han añadido ${addedCount} productos a tu carrito.`, isUser: false, isSystem: true }]);
+        }
+      }
+
     } catch (e) {
-      setMessages(prev => [...prev, { text: 'No pude conectarme al servidor. Inténtalo de nuevo.', isUser: false }]);
+      setMessages(prev => [...prev, { text: 'No pude conectarme al servidor.', isUser: false }]);
     } finally {
       setIsLoading(false);
     }
@@ -527,7 +556,7 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
             <div className="bg-brand-primary p-4 text-black flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bot className="w-6 h-6" />
-                <span className="font-bold text-lg leading-none pt-1 uppercase tracking-tight">Chef AI Mamma Mia</span>
+                <span className="font-bold text-lg leading-none pt-1 uppercase tracking-tight">Chef AI</span>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-black/70 hover:text-black">
                 <X className="w-5 h-5" />
@@ -537,13 +566,16 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
             <div className="h-[300px] overflow-y-auto p-4 space-y-3 bg-surface-container/50">
               {messages.length === 0 && (
                 <div className="text-center text-gray-400 text-sm mt-8 space-y-2">
-                  <p>¡Ciao! Soy tu sumiller y chef virtual.</p>
-                  <p>¿Qué te apetece hoy? Dime tus preferencias, alergias o antojos y te recomendaré algo de nuestra carta.</p>
+                  <p>¡Hola! Puedo añadir platos o modificar los que pidas.</p>
+                  <p>Ej: "Añade una pizza barbacoa, pero la mitad que sea cuatro quesos".</p>
                 </div>
               )}
               {messages.map((m, i) => (
                 <div key={i} className={`flex ${m.isUser ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-xl px-4 py-2 text-sm ${m.isUser ? 'bg-brand-secondary text-black rounded-br-none' : 'bg-white/10 text-white rounded-bl-none'}`}>
+                  <div className={`max-w-[80%] rounded-xl px-4 py-2 text-sm ${
+                      m.isSystem ? 'bg-green-500/20 text-green-400 font-bold border border-green-500/30' :
+                      m.isUser ? 'bg-brand-secondary text-black rounded-br-none' : 'bg-white/10 text-white rounded-bl-none'
+                    }`}>
                     {m.text}
                   </div>
                 </div>
@@ -567,7 +599,7 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
                    value={input}
                    onChange={e => setInput(e.target.value)}
                    onKeyDown={e => e.key === 'Enter' && handleSend()}
-                   placeholder="Ej: Quiero algo sin gluten..."
+                   placeholder="Ej: Quiero una pizza..."
                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-brand-primary placeholder-gray-500"
                  />
                  <button 
@@ -863,19 +895,25 @@ const Dashboard = () => {
       <div className="flex flex-wrap gap-3 items-center">
         {(role === 'JEFE' || role === 'ENCARGADO') && (
             <>
+              <button onClick={() => navigate('/admin')} className="flex items-center gap-2 bg-brand-blue hover:bg-brand-light-blue text-white transition-all px-5 py-2.5 rounded-2xl font-bold font-sans">
+                <Settings size={18} />
+                <span className="text-sm">Admin PGLite</span>
+              </button>
               <button 
                 onClick={() => setShowImporter(true)} 
                 className="flex items-center gap-2 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary transition-all px-5 py-2.5 rounded-2xl border border-brand-primary/20 hover:scale-105 active:scale-95 group font-bold font-sans shadow-lg"
               >
                 <Users size={18} className="group-hover:scale-110 transition-transform" />
-                <span className="text-sm">Importar Clientes</span>
-              </button>
-              <button onClick={() => navigate('/settings')} className="flex items-center gap-2 bg-surface-container hover:bg-white/5 active:bg-white/10 transition-all px-5 py-2.5 rounded-2xl border border-white/5 hover:scale-105 active:scale-95 font-bold font-sans">
-                <Settings size={18} className="text-gray-400" />
-                <span className="text-sm text-gray-300">Ajustes</span>
+                <span className="text-sm">Importar CRM</span>
               </button>
             </>
         )}
+        <button onClick={() => navigate('/cliente')} className="flex items-center gap-2 bg-brand-primary hover:bg-brand-yellow text-black transition-all px-5 py-2.5 rounded-2xl font-bold font-sans shadow-lg hover:scale-105 active:scale-95">
+          <span className="text-sm">App Cliente</span>
+        </button>
+        <button onClick={() => navigate('/tauleta')} className="flex items-center gap-2 bg-surface-container hover:bg-white/5 transition-all px-5 py-2.5 rounded-2xl border border-white/5 font-bold font-sans shadow-lg hover:scale-105 active:scale-95">
+          <span className="text-sm text-gray-300">Tauleta UI</span>
+        </button>
         <div className="flex items-center gap-3 bg-surface-container/50 px-5 py-2.5 rounded-2xl border border-white/5 backdrop-blur-md">
           <span className="relative flex h-3 w-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -1768,6 +1806,16 @@ const Profile = () => {
     const displayPhone = user?.phone || "+34 612 345 678";
     const displayRole = role || "Chef Ejecutivo";
     
+    const [historyOrders, setHistoryOrders] = React.useState<any[]>([]);
+    
+    React.useEffect(() => {
+        const fetchHistory = async () => {
+            const history = await dbService.getOrdersHistory(displayPhone);
+            setHistoryOrders(history);
+        };
+        fetchHistory();
+    }, [displayPhone, orders]);
+
     const userOrders = orders.filter(o => o.customer === displayName || o.phone === displayPhone);
 
     const handleRepeatOrder = (order: typeof orders[0]) => {
@@ -2008,6 +2056,39 @@ const Profile = () => {
                         </div>
                     )}
                     
+                    <div className="bg-surface-container rounded-3xl p-8 border border-white/5">
+                        <h3 className="text-xl font-black text-brand-primary uppercase tracking-tighter mb-6">Historial de Pedidos (PGLite)</h3>
+                        {historyOrders.length === 0 ? (
+                            <p className="text-gray-500">No hay pedidos en la base de datos para este teléfono.</p>
+                        ) : (
+                            <div className="space-y-4">
+                                {historyOrders.map((order, index) => (
+                                    <div key={`history-${order.id}-${index}`} className="bg-surface-container-high p-6 rounded-2xl border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className="font-mono text-sm text-brand-yellow">#DB-{order.id}</span>
+                                                <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-300">
+                                                    {new Date(order.created_at).toLocaleString()}
+                                                </span>
+                                                <span className={`text-[10px] px-2 py-1 rounded uppercase font-bold
+                                                    ${order.status === 'COMPLETADO' ? 'bg-green-500/20 text-green-400' :
+                                                      order.status === 'pending' || order.status === 'PENDIENTE' ? 'bg-brand-red/20 text-brand-red' :
+                                                      'bg-brand-primary/20 text-brand-primary'}
+                                                `}>{order.status}</span>
+                                            </div>
+                                            <ul className="text-sm text-gray-400 space-y-1">
+                                                {order.items?.map((item: any, idx: number) => (
+                                                    <li key={idx}>- {item.quantity}x {item.name || 'Producto Desconocido'} {item.notes && <span className="italic text-gray-500">({item.notes})</span>}</li>
+                                                ))}
+                                            </ul>
+                                            <div className="mt-4 font-bold text-lg">Total: €{Number(order.total).toFixed(2)}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <div className="bg-surface-container rounded-3xl p-8 border border-white/5">
                         <h3 className="text-xl font-black text-brand-primary uppercase tracking-tighter mb-6">Mis Pedidos</h3>
                         {userOrders.length === 0 ? (
@@ -2390,7 +2471,8 @@ const Cart = () => {
     const [paymentMethod, setPaymentMethod] = React.useState<'EFECTIVO' | 'TARJETA' | 'PAYPAL' | 'BIZUM'>('EFECTIVO');
     const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
     const [actionMessage, setActionMessage] = React.useState<{type: 'error' | 'success', text: string} | null>(null);
-    const [paymentSim, setPaymentSim] = React.useState<null | { method: string, resolve: (v: boolean) => void }>(null);
+    const resolvePaymentRef = React.useRef<(v: boolean) => void>(() => {});
+    const [paymentSimMethod, setPaymentSimMethod] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         if (actionMessage) {
@@ -2435,9 +2517,10 @@ const Cart = () => {
             setIsProcessingPayment(false);
             
             const isConfirmed = await new Promise<boolean>(resolve => {
-                setPaymentSim({ method: paymentMethod, resolve });
+                resolvePaymentRef.current = resolve;
+                setPaymentSimMethod(paymentMethod);
             });
-            setPaymentSim(null);
+            setPaymentSimMethod(null);
             
             if (!isConfirmed) {
                 setActionMessage({ type: 'error', text: 'El pago ha sido cancelado o ha fallado.' });
@@ -2494,7 +2577,7 @@ const Cart = () => {
         </AnimatePresence>
 
         <AnimatePresence>
-            {paymentSim && (
+            {paymentSimMethod && (
                 <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -2509,12 +2592,12 @@ const Cart = () => {
                     >
                         <ShoppingCart size={48} className="mx-auto mb-4 text-brand-primary" />
                         <h3 className="text-2xl font-display font-black text-white mb-2">Simulación de Pago</h3>
-                        <p className="text-gray-400 mb-6 font-bold">Pasarela virtual para <span className="text-brand-primary">{paymentSim.method}</span>.<br/>Total a cobrar: <span className="text-white">€{total.toFixed(2)}</span></p>
+                        <p className="text-gray-400 mb-6 font-bold">Pasarela virtual para <span className="text-brand-primary">{paymentSimMethod}</span>.<br/>Total a cobrar: <span className="text-white">€{total.toFixed(2)}</span></p>
                         <div className="flex gap-4">
-                            <button onClick={() => paymentSim.resolve(false)} className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-brand-red/20 text-gray-400 hover:text-brand-red transition-colors font-bold">
+                            <button onClick={() => resolvePaymentRef.current(false)} className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-brand-red/20 text-gray-400 hover:text-brand-red transition-colors font-bold">
                                 Fallar Pago
                             </button>
-                            <button onClick={() => paymentSim.resolve(true)} className="flex-1 py-3 rounded-xl bg-brand-primary/20 hover:bg-brand-primary text-brand-primary hover:text-black transition-colors font-black">
+                            <button onClick={() => resolvePaymentRef.current(true)} className="flex-1 py-3 rounded-xl bg-brand-primary/20 hover:bg-brand-primary text-brand-primary hover:text-black transition-colors font-black">
                                 Simular Éxito
                             </button>
                         </div>
@@ -3035,6 +3118,9 @@ const AnimatedRoutes = () => {
           <Route path="/settings" element={<PageWrapper><StoreSettingsPage /></PageWrapper>} />
           <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
           <Route path="/mesa/:tableNumber" element={<TableRedirect />} />
+          <Route path="/cliente" element={<PageWrapper><AppCliente /></PageWrapper>} />
+          <Route path="/tauleta" element={<PageWrapper><TauletaApp /></PageWrapper>} />
+          <Route path="/admin" element={<PageWrapper><AdminApp /></PageWrapper>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Route>
       </Routes>

@@ -178,24 +178,38 @@ async function startServer() {
     }
   });
 
-  // API Route for Gemini Food Recommendations
+  // API Route for Gemini Food Recommendations & Order Parsing
   app.post("/api/gemini/recommend", async (req, res) => {
     try {
       const { preferences, menuData } = req.body;
       
-      const prompt = `Eres un asistente virtual de una pizzería/restaurante italiano (Mamma Mia Nules). 
-      Un cliente te ha pedido una recomendación basada en estas preferencias: "${preferences}".
-      Esta es la carta disponible (solo puedes recomendar cosas de la carta):
+      const prompt = `Eres un asistente virtual de pedidos de una pizzería (Mamma Mia Nules). 
+      El cliente ha dicho: "${preferences}".
+      
+      Tu trabajo es devolver UNICAMENTE un objeto JSON estructurado con la recomendación y la lista de todos los productos mencionados en cantidades.
+      Carta disponible:
       ${JSON.stringify(menuData)}
       
-      Recomienda 1 plato principal, y si encaja también 1 entrante o bebida, pero de forma conversacional y muy breve (máximo 2-3 frases cortas). Usa un tono amigable, italiano-español simpático, emojis.`;
+      Devuelve ESTRICTAMENTE este JSON:
+      {
+        "reply": "Tu recomendación conversacional amigable aquí en 2 frases",
+        "order": {
+          "pizzas": [{"name": "nombre", "qty": 1, "notes": "ej: mitad x mitad y"}],
+          "bebidas": [{"name": "nombre", "qty": 1}],
+          "otros": [{"name": "nombre", "qty": 1}]
+        }
+      }
+      Nunca uses markdown blocks ni digas nada fuera del JSON.`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.5-flash",
         contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        }
       });
 
-      res.json({ reply: response.text });
+      res.json(JSON.parse(response.text || '{}'));
     } catch (error: any) {
       console.error(error);
       res.status(500).json({ error: error.message });
