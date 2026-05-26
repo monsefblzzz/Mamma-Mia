@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { dbService } from '../db/DatabaseService';
-import { ChefHat, Check, Clock, AlertCircle } from 'lucide-react';
+import { ChefHat, Check, Clock } from 'lucide-react';
 
 export const TauletaApp = () => {
     const [orders, setOrders] = useState<any[]>([]);

@@ -1,4 +1,5 @@
 import { PGlite } from '@electric-sql/pglite';
+import { MENU_ITEMS } from '../types';
 
 export class DatabaseService {
   private db: PGlite | null = null;
@@ -96,17 +97,39 @@ export class DatabaseService {
       EXECUTE FUNCTION log_order_status_change();
     `);
     
-    // Seed basic categories and products if empty
+    // Seed and synchronize categories and products from MENU_ITEMS
     const counts = await this.db.query<{count: string}>('SELECT COUNT(*) FROM categories');
     if (counts.rows[0].count === '0') {
-      await this.db.exec(`
-        INSERT INTO categories (name) VALUES ('Pizzas'), ('Bebidas'), ('Entrantes');
-        INSERT INTO products (id, category_id, name, description, price, allergens) VALUES 
-          ('p1', 1, 'Pizza Margherita', 'Tomate, mozzarella y albahaca fresca', 9.50, ARRAY['gluten', 'lactose']),
-          ('p2', 1, 'Pizza Barbacoa', 'Tomate, mozzarella, bacon, pollo y salsa barbacoa', 12.00, ARRAY['gluten', 'lactose']),
-          ('p3', 2, 'Coca-Cola', 'Refresco de cola de 33cl', 2.50, ARRAY[]::TEXT[]),
-          ('p4', 3, 'Patatas Bravas', 'Patatas fritas con salsa brava casera y alioli', 5.50, ARRAY['gluten']);
-      `);
+      const categoryNames = Array.from(new Set(MENU_ITEMS.map(item => item.category)));
+      for (const name of categoryNames) {
+        await this.db.query('INSERT INTO categories (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [name]);
+      }
+    }
+    
+    // Always ensure all MENU_ITEMS are inserted so no order items run into FK errors
+    const catsRes = await this.db.query<{id: number, name: string}>('SELECT id, name FROM categories');
+    const categoryIdMap = new Map<string, number>();
+    catsRes.rows.forEach(row => {
+      categoryIdMap.set(row.name, row.id);
+    });
+
+    for (const product of MENU_ITEMS) {
+      const catId = categoryIdMap.get(product.category) || null;
+      const allergensArray = product.allergy_info ? product.allergy_info.split(',').map(s => s.trim()) : [];
+      await this.db.query(
+        `INSERT INTO products (id, category_id, name, description, price, allergens, image_url) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7) 
+         ON CONFLICT (id) DO NOTHING`,
+        [
+          product.id,
+          catId,
+          product.name,
+          product.description || '',
+          product.price,
+          allergensArray,
+          product.image || null
+        ]
+      );
     }
 
     const ingCounts = await this.db.query<{count: string}>('SELECT COUNT(*) FROM ingredients');
@@ -284,9 +307,22 @@ export class DatabaseService {
       // Calculate total
       let total = 0;
       for (const item of items) {
+        // Enforce that product exists in products table to satisfy foreign key constraint
         const productRes = await tx.query<{price: number}>('SELECT price FROM products WHERE id = $1', [item.productId]);
-        if (productRes.rows.length > 0) {
-           total += Number(productRes.rows[0].price) * item.qty;
+        if (productRes.rows.length === 0) {
+          // Attempt to find metadata from standard list or default
+          const foundMeta = MENU_ITEMS.find((m: any) => m.id === item.productId);
+          const name = foundMeta ? foundMeta.name : `Producto ${item.productId}`;
+          const price = foundMeta ? foundMeta.price : 10.00;
+          await tx.query(
+            `INSERT INTO products (id, name, description, price, allergens) 
+             VALUES ($1, $2, $3, $4, $5) 
+             ON CONFLICT (id) DO NOTHING`,
+            [item.productId, name, 'Producto auto-generado para satisfacer requerimiento de pedidos', price, []]
+          );
+          total += price * item.qty;
+        } else {
+          total += Number(productRes.rows[0].price) * item.qty;
         }
       }
 
@@ -307,6 +343,16 @@ export class DatabaseService {
     
     this.notify();
     return orderId;
+  }
+
+  async updateOrderStatus(orderId: number, status: string) {
+    if (!this.db) return;
+    try {
+      await this.db.query('UPDATE orders SET status = $1 WHERE id = $2', [status, orderId]);
+      this.notify();
+    } catch (e: any) {
+      console.error("[DB] updateOrderStatus error:", e);
+    }
   }
 }
 

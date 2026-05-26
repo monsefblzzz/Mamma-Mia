@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ShoppingCart, Mic, Send, ChefHat, MapPin, ChevronRight, Plus, Minus, Search } from 'lucide-react';
+import { ShoppingCart, Mic, Send, ChefHat, MapPin, ChevronRight, Plus, Minus } from 'lucide-react';
 import { dbService } from '../db/DatabaseService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

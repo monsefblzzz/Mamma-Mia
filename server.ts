@@ -4,10 +4,9 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import { PGlite } from '@electric-sql/pglite';
 
-const DB_PATH = path.join(process.cwd(), 'database_pg');
-
 async function setupDatabase() {
-  const db = new PGlite(DB_PATH);
+  const dbPath = process.env.NODE_ENV === "production" ? "/tmp/database_pg" : path.join(process.cwd(), "database_pg");
+  const db = new PGlite(dbPath);
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -168,19 +167,22 @@ async function startServer() {
     } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
   
-  // Wait for AI instance
-  const ai = new GoogleGenAI({ 
-    apiKey: process.env.GEMINI_API_KEY,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      }
-    }
-  });
-
   // API Route for Gemini Food Recommendations & Order Parsing
   app.post("/api/gemini/recommend", async (req, res) => {
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        return res.status(500).json({ error: "GEMINI_API_KEY is not defined" });
+      }
+
+      const ai = new GoogleGenAI({ 
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
+
       const { preferences, menuData } = req.body;
       
       const prompt = `Eres un asistente virtual de pedidos de una pizzería (Mamma Mia Nules). 
