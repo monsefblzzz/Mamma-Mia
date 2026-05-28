@@ -29,6 +29,23 @@
     </script>
   </head>
   <body>
+    <div id="error-log" style="display:none; padding:20px; font-family:monospace; background:#900; color:#fff; z-index:999999; position:fixed; top:0; left:0; right:0; bottom:0;"></div>
+    <script>
+      window.addEventListener('error', function(e) {
+        var el = document.getElementById('error-log');
+        if(el) {
+          el.style.display = 'block';
+          el.innerHTML += '<b>Error:</b> ' + String(e.message) + '<br><i>' + e.filename + ':' + e.lineno + '</i><br><br>';
+        }
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        var el = document.getElementById('error-log');
+        if(el) {
+          el.style.display = 'block';
+          el.innerHTML += '<b>Promise Error:</b> ' + String(e.reason) + '<br><br>';
+        }
+      });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

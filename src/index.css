@@ -3,38 +3,44 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Epilogue", sans-serif;
+  --font-display: "Epilogue", ui-sans-serif, sans-serif;
 
-  --color-brand-primary: #f0b31e;
-  --color-brand-yellow: #f0b31e;
-  --color-brand-red: #da2b19;
-  --color-brand-blue: #226bac;
-  --color-brand-light-blue: #5384af;
-  --color-brand-brown: #5c361c;
-  --color-surface-base: #050505;
-  --color-surface-container: #2d1308;
-  --color-surface-bright: #5c361c;
+  --color-brand-primary: #F9CE1D;
+  --color-brand-yellow: #F9CE1D;
+  --color-brand-red: #D62E2E;
+  --color-brand-blue: #1D70B8;
+  --color-brand-light-blue: #1D70B8;
+  --color-brand-brown: #C78E3C;
+  --color-surface-base: #1A1A1A;
+  --color-surface-container: #262626;
+  --color-surface-container-high: #333333;
+  --color-surface-bright: #F5F5F5;
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
 }
 
 @layer base {
   body {
-    @apply bg-surface-base text-white font-sans antialiased;
+    @apply bg-surface-base text-white font-sans antialiased selection:bg-white selection:text-black;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight;
+    @apply font-display tracking-tight text-white;
   }
 }
 
+.glass-panel {
+  @apply bg-surface-container/60 backdrop-blur-xl border border-white/5 shadow-2xl;
+}
+
 .neon-glow {
-  box-shadow: 0 0 15px rgba(255, 193, 7, 0.3);
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
 }
 
 .neon-glow-red {
-  box-shadow: 0 0 15px rgba(173, 2, 36, 0.3);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
 }
 
 @media print {
@@ -56,13 +62,40 @@
   }
 }
 
+::selection {
+  background-color: rgba(255,255,255,0.9);
+  color: #000;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes notificationPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.notification-status-indicator.data-pulsing {
+  animation: notificationPulse 1s ease-in-out infinite;
 }

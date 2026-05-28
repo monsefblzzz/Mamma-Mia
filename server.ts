@@ -3,6 +3,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import { PGlite } from '@electric-sql/pglite';
+import webPush from 'web-push';
 
 async function setupDatabase() {
   const dbPath = process.env.NODE_ENV === "production" ? "/tmp/database_pg" : path.join(process.cwd(), "database_pg");
@@ -35,6 +36,16 @@ async function setupDatabase() {
       table_id TEXT,
       paymentMethod TEXT,
       items_json TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS push_logs (
+      id TEXT PRIMARY KEY,
+      title TEXT,
+      body TEXT,
+      sentAt BIGINT,
+      successCount INTEGER,
+      failureCount INTEGER,
+      details_json TEXT
     );
   `);
   return db;
@@ -166,6 +177,163 @@ async function startServer() {
       res.json({ success: true });
     } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
+
+  // API: Update User fields (PATCH)
+  app.patch('/api/users', async (req, res) => {
+    try {
+      const { phone, notificationToken } = req.body;
+      if (!phone) return res.status(400).json({ error: "Phone is required" });
+      
+      const result = await db.query('SELECT * FROM users WHERE phone = $1', [phone]);
+      if (result.rows.length === 0) return res.status(404).json({ error: "User not found" });
+      
+      const user: any = result.rows[0];
+      const data_json = user.data_json ? JSON.parse(user.data_json as string) : {};
+      
+      if (notificationToken !== undefined) {
+         data_json.notificationToken = notificationToken;
+      }
+      
+      await db.query('UPDATE users SET data_json = $1 WHERE phone = $2', [JSON.stringify(data_json), phone]);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // ---------- WEB PUSH Endpoints ----------
+  
+  app.get('/api/push/generate-keys', (req, res) => {
+     const vapidKeys = webPush.generateVAPIDKeys();
+     res.json(vapidKeys);
+  });
+
+  const sendPushToAll = async (title: string, body: string, db: any, vapidKey: string, vapidPrivateKey: string) => {
+      webPush.setVapidDetails('mailto:soporte@mammamia.com', vapidKey, vapidPrivateKey);
+      
+      let successCount = 0;
+      let failureCount = 0;
+      const results = [];
+      const id = Date.now().toString();
+
+      try {
+          const res = await db.query('SELECT * FROM users');
+          const users = res.rows;
+          
+          for (const u of users) {
+              const data = u.data_json ? JSON.parse(u.data_json as string) : {};
+              if (data.notificationToken) {
+                  try {
+                      // notificationToken is a stringified PushSubscription object
+                      const pushSubscription = JSON.parse(data.notificationToken);
+                      await webPush.sendNotification(pushSubscription, JSON.stringify({ 
+                          notification: {
+                              title,
+                              body
+                          }
+                      }));
+                      successCount++;
+                      results.push({ phone: u.phone, status: 'success' });
+                  } catch (e: any) {
+                      console.error('Error sending push to user:', u.phone, e);
+                      failureCount++;
+                      results.push({ phone: u.phone, status: 'error', error: e.message });
+                  }
+              }
+          }
+
+          await db.query(`
+              INSERT INTO push_logs (id, title, body, sentAt, successCount, failureCount, details_json) 
+              VALUES ($1, $2, $3, $4, $5, $6, $7)
+          `, [id, title, body, Date.now(), successCount, failureCount, JSON.stringify(results)]);
+          
+      } catch(e) {
+          console.error(e);
+      }
+      return { successCount, failureCount, id };
+  };
+
+  app.post('/api/push/notify', async (req, res) => {
+      try {
+          const { title, body, vapidKey, vapidPrivateKey, phone } = req.body;
+          if (!vapidKey || !vapidPrivateKey) return res.status(400).json({ error: "Missing VAPID keys" });
+          webPush.setVapidDetails('mailto:soporte@mammamia.com', vapidKey, vapidPrivateKey);
+          
+          // Send to specific user by phone
+          const result = await db.query('SELECT * FROM users WHERE phone = $1', [phone]);
+          if (result.rows.length === 0) return res.status(404).json({ error: "User not found" });
+          
+          const u: any = result.rows[0];
+          const data = u.data_json ? JSON.parse(u.data_json as string) : {};
+          
+          if (data.notificationToken) {
+              const pushSubscription = JSON.parse(data.notificationToken);
+              try {
+                  await webPush.sendNotification(pushSubscription, JSON.stringify({
+                      notification: { title, body }
+                  }));
+                  
+                  // Log the single push
+                  await db.query(`
+                      INSERT INTO push_logs (id, title, body, sentAt, successCount, failureCount, details_json) 
+                      VALUES ($1, $2, $3, $4, $5, $6, $7)
+                  `, [Date.now().toString(), title, body, Date.now(), 1, 0, JSON.stringify([{ phone, status: 'success' }])]);
+                  
+              } catch (pushErr: any) {
+                  // Log format
+                  await db.query(`
+                      INSERT INTO push_logs (id, title, body, sentAt, successCount, failureCount, details_json) 
+                      VALUES ($1, $2, $3, $4, $5, $6, $7)
+                  `, [Date.now().toString(), title, body, Date.now(), 0, 1, JSON.stringify([{ phone, status: 'error', error: pushErr.message }])]);
+              }
+              res.json({ success: true });
+          } else {
+              res.status(400).json({ error: "User has no notification token" });
+          }
+      } catch (e: any) {
+          res.status(500).json({ error: e.message });
+      }
+  });
+
+  app.post('/api/push/test', async (req, res) => {
+      try {
+          const { vapidKey, vapidPrivateKey } = req.body;
+          if (!vapidKey || !vapidPrivateKey) return res.status(400).json({ error: "Missing VAPID keys" });
+          const result = await sendPushToAll("Prueba de Notificación", "¡El sistema VAPID está configurado correctamente!", db, vapidKey, vapidPrivateKey);
+          res.json(result);
+      } catch (e: any) {
+          res.status(500).json({ error: e.message });
+      }
+  });
+  
+  app.post('/api/push/broadcast', async (req, res) => {
+      try {
+          const { vapidKey, vapidPrivateKey, title, body } = req.body;
+          if (!vapidKey || !vapidPrivateKey) return res.status(400).json({ error: "Missing VAPID keys" });
+          const result = await sendPushToAll(title, body, db, vapidKey, vapidPrivateKey);
+          res.json(result);
+      } catch (e: any) {
+          res.status(500).json({ error: e.message });
+      }
+  });
+  
+  app.get('/api/push/logs', async (req, res) => {
+      try {
+          const result = await db.query('SELECT * FROM push_logs ORDER BY sentAt DESC');
+          const logs = result.rows.map((r: any) => ({
+              ...r,
+              sentAt: Number(r.sentat),
+              details: JSON.parse(r.details_json || '[]')
+          }));
+          logs.forEach(l => {
+              delete l.sentat;
+              delete l.details_json;
+          });
+          res.json(logs);
+      } catch(e: any) {
+          res.status(500).json({ error: e.message });
+      }
+  });
+
+
   
   // API Route for Gemini Food Recommendations & Order Parsing
   app.post("/api/gemini/recommend", async (req, res) => {
@@ -215,6 +383,31 @@ async function startServer() {
     } catch (error: any) {
       console.error(error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // API Route for Inventory Alerts
+  app.post("/api/inventory/alert", async (req, res) => {
+    try {
+      const { id, name, stock, minLevel } = req.body;
+      console.log(`[ALERT] Inventory for ${name} (ID: ${id}) has dropped below minimum level! Current stock: ${stock}, Min: ${minLevel}`);
+      
+      if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER && process.env.ADMIN_PHONE_NUMBER) {
+          const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+          await client.messages.create({
+             body: `ALERTA DE INVENTARIO: ${name} está por debajo del nivel mínimo (${stock} <= ${minLevel}). Por favor, reponga el stock.`,
+             from: process.env.TWILIO_PHONE_NUMBER,
+             to: process.env.ADMIN_PHONE_NUMBER
+          });
+          console.log("SMS sent via Twilio.");
+      } else {
+          console.log("No Twilio credentials found in environment. SMS not sent.");
+      }
+      
+      res.json({ success: true });
+    } catch (e: any) {
+      console.error("Alert error", e);
+      res.status(500).json({ error: e.message });
     }
   });
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { cn } from './lib/utils';
-import { Clock, UserCircle, Package, ShoppingCart, Phone, Check, Star, Settings, Search, Calendar, Wheat, Nut, Milk, Fish, Egg, Vegan, RotateCcw, Printer, UtensilsCrossed, Users, X, Fingerprint, ScanFace, Scan, Navigation, MapPin, ShoppingBag, Bot, Send, MessageSquare } from 'lucide-react';
+import { Clock, UserCircle, Package, ShoppingCart, Phone, Check, Star, Settings, Search, Calendar, Wheat, Nut, Milk, Fish, Egg, Vegan, RotateCcw, Printer, UtensilsCrossed, Users, X, Fingerprint, ScanFace, Scan, Navigation, MapPin, ShoppingBag, Bot, Send, MessageSquare, Pizza, Home, AlertCircle, Download } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Order } from './types';
@@ -15,6 +15,9 @@ import autoTable from 'jspdf-autotable';
 import { dbService } from './db/DatabaseService';
 import { QRCodeSVG } from 'qrcode.react';
 import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
+import { GoogleMapsOverlay } from '@deck.gl/google-maps';
+import { HeatmapLayer } from '@deck.gl/aggregation-layers';
+import { AddressAutocomplete } from './components/AddressAutocomplete';
 
 import { AdminApp } from './pages/AdminApp';
 import { TauletaApp } from './pages/TauletaApp';
@@ -32,11 +35,21 @@ const PageWrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 const API_KEY =
-  process.env.GOOGLE_MAPS_PLATFORM_KEY ||
   (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
   (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
   '';
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
+
+function DeckGlOverlay({ layers }: { layers: any[] }) {
+  const map = useMap();
+  React.useEffect(() => {
+    if (!map) return;
+    const overlay = new GoogleMapsOverlay({ layers });
+    overlay.setMap(map);
+    return () => overlay.setMap(null);
+  }, [map, layers]);
+  return null;
+}
 
 const Login = () => {
     const { login, getUserByPhone, user } = useAuth();
@@ -341,30 +354,27 @@ const MenuItemCard = ({
 }: any) => {
   const ref = React.useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], ["-15%", "15%"]);
+  const y = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
 
   return (
     <div 
       ref={ref}
       onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)}
-      className="bg-surface-container rounded-3xl overflow-hidden border border-white/5 hover:border-brand-primary/50 transition-all duration-300 ease-out group flex flex-col hover:shadow-[0_8px_30px_rgba(255,228,175,0.12)] hover:-translate-y-1 hover:scale-[1.02] cursor-pointer will-change-transform"
+      className="bg-surface-container rounded-3xl overflow-hidden border border-white/5 hover:border-brand-primary/50 transition-all duration-300 ease-out group flex flex-col cursor-pointer hover:shadow-[0_8px_30px_rgba(249,206,29,0.12)] hover:-translate-y-1 hover:scale-[1.02]"
     >
-      <div className="h-56 bg-black/60 relative overflow-hidden">
+      <div className="h-48 bg-black relative overflow-hidden">
          {item.image ? (
             <motion.img 
               style={{ y }}
               src={item.image} 
               alt={item.name} 
-              className="w-full h-[130%] object-cover group-hover:scale-110 transition-transform duration-700 absolute top-[-15%] left-0 right-0" 
+              className="w-full h-[120%] object-cover opacity-90 group-hover:scale-105 group-hover:opacity-100 transition-all duration-700 absolute top-[-10%] left-0 right-0" 
             />
          ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-gray-600 bg-surface-container-high pattern-diagonal-lines pattern-white/5 pattern-size-4">
-               <span className="text-xs font-black uppercase tracking-widest opacity-50">Mamma Mia!</span>
+               <span className="text-xs font-display font-black uppercase tracking-widest opacity-50">Mamma Mia!</span>
             </div>
          )}
-         <div className="absolute top-4 right-4 bg-surface-base/90 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-xl flex items-center gap-2">
-            <span className="text-xl font-display font-black text-brand-yellow">€{item.price.toFixed(2)}</span>
-         </div>
          
          <button 
            onClick={(e) => {
@@ -372,50 +382,48 @@ const MenuItemCard = ({
              updateMenuItem(item.id, { ...item, isPopular: !item.isPopular });
            }}
            className={cn(
-             "absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest shadow-xl flex items-center gap-1 transition-colors",
-             item.isPopular ? "bg-brand-red text-white" : "bg-black/50 text-white/50 hover:bg-black/80 hover:text-white"
+             "absolute top-4 right-4 p-2.5 rounded-full border shadow-xl flex items-center gap-1 transition-all",
+             item.isPopular ? "bg-brand-red text-white border-brand-red" : "bg-black/40 text-gray-400 border-white/10 hover:bg-black/80 hover:text-white"
            )}
          >
-           <Star size={12} fill="currentColor" /> Popular
+           <Star size={14} fill={item.isPopular ? "currentColor" : "none"} />
          </button>
       </div>
       
-      <div className="p-6 flex-1 flex flex-col relative z-20 bg-surface-container">
-          <div className="flex justify-between items-start mb-2 gap-2">
-            <h4 className="text-2xl font-black uppercase text-white">{item.name}</h4>
-            <div className="flex flex-col items-end gap-2 shrink-0">
-               <StarRating 
-                 rating={item.rating} 
-                 ratingCount={item.ratingCount} 
-                 onRate={(rating) => rateMenuItem(item.id, rating)} 
-               />
-               <AllergyIcons info={item.allergy_info} />
-            </div>
+      <div className="p-5 flex-1 flex flex-col relative z-20 bg-surface-container">
+          <div className="flex justify-between items-start mb-1 gap-4">
+            <h4 className="text-lg font-display font-bold text-white group-hover:text-brand-primary transition-colors leading-tight">{item.name}</h4>
           </div>
-          <p className="text-sm text-gray-400 font-bold mb-6 flex-1 leading-relaxed">
+          <p className="text-xs text-gray-400 font-sans mb-3 flex-1 leading-relaxed line-clamp-2">
             {item.description}
           </p>
+          <div className="flex justify-between items-center mb-4">
+             <span className="text-lg font-display font-bold text-brand-primary">€{item.price.toFixed(2)}</span>
+             <div className="flex flex-col items-end gap-2 shrink-0">
+                <AllergyIcons info={item.allergy_info} />
+             </div>
+          </div>
           
           {selectedItem?.id === item.id && (
             <div className="mb-6 space-y-4 animate-in fade-in zoom-in-95 duration-300">
               {item.allergy_info && (
                 <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                   <h5 className="font-bold text-gray-400 uppercase tracking-widest text-[10px] mb-2 text-brand-yellow">Info Integrada</h5>
-                   <p className="text-xs font-bold text-gray-300">{item.allergy_info}</p>
+                   <h5 className="font-mono text-gray-400 uppercase tracking-widest text-[10px] mb-2 text-white">Allergy Info</h5>
+                   <p className="text-xs text-gray-300">{item.allergy_info}</p>
                 </div>
               )}
               {item.recipe && (item.recipe.ingredients.length > 0 || item.recipe.steps.length > 0) && (
-                <div className="bg-surface-container-high rounded-2xl border border-brand-primary/20 p-4">
-                   <h5 className="font-bold text-brand-primary uppercase tracking-widest text-[10px] mb-3 flex items-center gap-2">
+                <div className="bg-surface-container-high rounded-2xl border border-white/10 p-4">
+                   <h5 className="font-mono text-white uppercase tracking-widest text-[10px] mb-3 flex items-center gap-2">
                      <UtensilsCrossed size={12} />
-                     Receta y Preparación
+                     Recipe Details
                    </h5>
                    {item.recipe.ingredients.length > 0 && (
                      <div className="mb-4">
-                       <h6 className="text-[10px] uppercase font-bold text-gray-400 mb-2">Ingredientes</h6>
+                       <h6 className="text-[10px] uppercase font-bold text-gray-400 mb-2">Ingredients</h6>
                        <div className="flex flex-wrap gap-2">
                          {item.recipe.ingredients.map((ing: string, i: number) => (
-                           <span key={i} className="text-xs font-bold bg-white/5 text-gray-300 px-2 py-1 rounded">
+                           <span key={i} className="text-xs bg-white/5 text-gray-300 px-2 py-1 rounded">
                              {ing}
                            </span>
                          ))}
@@ -424,11 +432,11 @@ const MenuItemCard = ({
                    )}
                    {item.recipe.steps.length > 0 && (
                      <div>
-                       <h6 className="text-[10px] uppercase font-bold text-gray-400 mb-2">Preparación</h6>
+                       <h6 className="text-[10px] uppercase font-bold text-gray-400 mb-2">Preparation</h6>
                        <ol className="space-y-2">
                          {item.recipe.steps.map((step: string, i: number) => (
                            <li key={i} className="text-xs text-gray-300 flex gap-2">
-                             <span className="text-brand-primary font-bold shrink-0">{i + 1}.</span>
+                             <span className="text-white font-bold shrink-0">{i + 1}.</span>
                              <span>{step}</span>
                            </li>
                          ))}
@@ -440,36 +448,40 @@ const MenuItemCard = ({
             </div>
           )}
           
-          <div className="flex justify-between items-center mt-auto border-t border-white/5 pt-4">
-            <div className="flex flex-wrap gap-2">
-              <span className="text-[10px] uppercase font-black px-3 py-1.5 bg-white/5 rounded-lg text-gray-400 border border-white/10 tracking-wider">
+          <div className="flex justify-between items-end mt-auto border-t border-white/5 pt-5">
+            <div className="flex flex-wrap gap-2 max-w-[70%]">
+              <span className="text-[10px] font-mono uppercase bg-white/5 px-2 py-1 rounded text-gray-400">
                 {item.category}
               </span>
-              {item.tags?.map((tag: string) => (
-                <span key={tag} className="text-[10px] uppercase font-black px-3 py-1.5 bg-brand-primary/10 text-brand-primary rounded-lg border border-brand-primary/20 tracking-wider">
-                  #{tag}
+              {item.tags?.slice(0, 2).map((tag: string) => (
+                <span key={tag} className="text-[10px] font-mono uppercase bg-white/10 text-white px-2 py-1 rounded">
+                  {tag}
                 </span>
               ))}
             </div>
+            
             <div className="relative">
               {badges.filter((b: any) => b.itemId === item.id).map((b: any) => (
-                <div 
-                  key={b.id} 
-                  className="absolute -top-10 left-1/2 -translate-x-1/2 text-brand-primary font-black animate-in fade-in slide-in-from-bottom-2 zoom-in duration-500 animate-out fade-out slide-out-to-top-8 pointer-events-none z-50 text-xl drop-shadow-[0_0_10px_rgba(255,228,175,0.8)]"
-                >
-                  +1
-                </div>
+                 <motion.div 
+                   key={b.id}
+                   initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                   animate={{ opacity: 1, y: -40, scale: 1 }}
+                   exit={{ opacity: 0 }}
+                   className="absolute bottom-12 right-0 text-white font-bold bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs shadow-xl border border-white/20 pointer-events-none"
+                 >
+                   Added
+                 </motion.div>
               ))}
               <button 
                 onClick={(e) => handleAddToCart(e, item)}
                 title="Añadir al pedido"
                 className={cn(
-                  "h-12 w-12 rounded-2xl flex items-center justify-center font-black text-2xl transition-all duration-300 shadow-[0_0_20px_rgba(255,228,175,0.3)] relative z-10",
+                  "h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center transition-all duration-300 border relative z-10",
                   addedItem === item.id 
-                    ? "bg-green-500 text-white scale-110 shadow-[0_0_30px_rgba(34,197,94,0.4)]" 
-                    : "bg-brand-primary text-black hover:bg-brand-yellow hover:scale-110 active:scale-95"
+                    ? "bg-white text-black border-white scale-105" 
+                    : "bg-transparent text-gray-400 hover:text-white border-white/20 hover:border-white hover:bg-white/10 active:scale-95"
                 )}>
-                {addedItem === item.id ? <Check size={24} /> : "+"}
+                {addedItem === item.id ? <Check size={18} /> : <ShoppingCart size={18} />}
               </button>
             </div>
           </div>
@@ -626,10 +638,13 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
 
 // Lazy load pages for better performance
 const Menu = () => {
-  const { menuItems, categories, addToCart, rateMenuItem, updateMenuItem } = useStore();
+  const { menuItems, categories, addToCart, rateMenuItem, updateMenuItem, cart } = useStore();
+  const navigate = useNavigate();
   const [addedItem, setAddedItem] = React.useState<string | null>(null);
   const [selectedItem, setSelectedItem] = React.useState<any>(null);
   const [badges, setBadges] = React.useState<{id: number, itemId: string}[]>([]);
+  const [toastMessage, setToastMessage] = React.useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = React.useState<string>('TODAS');
   const [searchTerm, setSearchTerm] = React.useState('');
   const [sortByPopular, setSortByPopular] = React.useState(false);
   const [activeDietFilters, setActiveDietFilters] = React.useState<string[]>([]);
@@ -644,58 +659,84 @@ const Menu = () => {
     setTimeout(() => {
       setBadges(prev => prev.filter(b => b.id !== badgeId));
     }, 1000);
+    
+    setToastMessage(`¡${item.name} añadido al pedido!`);
 
     setTimeout(() => {
         setAddedItem(null);
-    }, 1500); // clear after 1.5s
+        setToastMessage(null);
+    }, 2000); // clear after 2s
   };
 
   return (
   <div className="space-y-12 relative w-full">
-    <div className="relative rounded-[2.5rem] overflow-hidden h-[28rem] border border-white/10 group shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
-      <div className="absolute inset-0 bg-gradient-to-r from-surface-base via-surface-base/80 to-transparent z-10 p-12 md:p-16 flex flex-col justify-center max-w-3xl">
-        <h2 className="text-6xl md:text-8xl font-display font-black text-white mb-2 tracking-tighter drop-shadow-2xl">Mamma Mia!</h2>
-        <h3 className="text-xl md:text-2xl text-brand-primary font-bold uppercase tracking-[0.3em] mb-6">La Nostra Pizza</h3>
-        <p className="text-lg md:text-xl text-gray-300 font-medium leading-relaxed max-w-lg">
-          Auténtica pizza, hamburguesas brutales y los mejores entrantes. 
-          <br /><span className="text-brand-primary font-bold">Descubre el sabor de Nules.</span>
+    <div className="relative rounded-[2rem] overflow-hidden h-[24rem] md:h-[32rem] border border-white/5 group bg-surface-container flex items-center shadow-2xl">
+      <div className="absolute inset-0 bg-gradient-to-r from-surface-container via-surface-container/60 to-transparent z-10 p-8 md:p-16 flex flex-col justify-center w-full md:w-2/3 lg:w-1/2">
+        <h3 className="text-xs font-mono text-brand-blue uppercase tracking-[0.3em] font-semibold mb-4">LA NOSTRA PIZZA</h3>
+        <h2 className="text-5xl md:text-7xl font-display text-brand-primary font-black mb-6 tracking-tighter leading-[1.1]">
+          Mamma Mia!
+        </h2>
+        <p className="text-sm md:text-base text-gray-400 font-bold leading-relaxed max-w-sm mb-8">
+          Auténtica pizza, hamburguesas brutales y los mejores entrantes. Descubre el sabor de Nules.
         </p>
+        <div className="flex items-center gap-4">
+          <button onClick={() => window.scrollTo({top: 500, behavior: 'smooth'})} className="px-6 py-3 bg-white text-black font-semibold rounded-full text-sm hover:bg-gray-200 transition-colors shadow-lg shadow-white/10">
+            View Menu
+          </button>
+        </div>
       </div>
-      <img 
-        src="https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop" 
-        className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 group-hover:opacity-70 transition-all duration-1000 ease-out" 
-        alt="Hero - Pizza Mamma Mia" 
-      />
-      <div className="absolute inset-0 bg-black/20 mix-blend-overlay pointer-events-none"></div>
+      <div className="absolute right-0 top-0 bottom-0 w-full md:w-2/3 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-l from-transparent via-surface-container/40 to-surface-container z-10" />
+        <img 
+          src="https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974&auto=format&fit=crop" 
+          className="w-full h-full object-cover opacity-50 contrast-125 saturate-50 group-hover:scale-105 transition-transform duration-[2s] ease-out" 
+          alt="Refined culinary presentation" 
+        />
+      </div>
     </div>
 
     {/* Search Input & Controls */}
-    <div className="relative max-w-3xl mx-auto -mt-6 z-20 flex flex-col md:flex-row gap-4 items-center">
-       <div className="relative flex-1 w-full">
+    <div className="relative max-w-3xl mx-auto -mt-6 z-20 flex flex-col gap-6 items-center">
+       <div className="relative w-full">
          <input 
             type="text"
-            placeholder="Buscar platos, ingredientes o etiquetas..."
+            placeholder="Buscar en la carta..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-surface-container/90 backdrop-blur-xl border border-white/20 text-white rounded-2xl py-4 pl-14 pr-4 shadow-[0_10px_40px_rgba(0,0,0,0.5)] focus:outline-none focus:border-brand-primary placeholder-gray-400 font-bold transition-all text-lg"
+            className="w-full bg-surface-base border border-brand-primary text-white rounded-full py-4 pl-14 pr-4 shadow-[0_10px_40px_rgba(0,0,0,0.5)] focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-500 font-bold transition-all text-lg"
          />
          <span className="absolute left-5 top-1/2 -translate-y-1/2 text-brand-primary">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <Pizza size={24} />
          </span>
        </div>
        
-       <label className="flex items-center gap-3 cursor-pointer bg-surface-container/90 backdrop-blur-xl px-5 py-4 rounded-2xl border border-white/20 group hover:border-brand-primary/50 transition-colors shadow-[0_10px_40px_rgba(0,0,0,0.5)] shrink-0 w-full md:w-auto">
-          <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors border-2 ${sortByPopular ? 'bg-brand-red border-brand-red text-white' : 'border-white/30 group-hover:border-brand-primary'}`}>
-             <Check size={14} className={`transition-opacity ${sortByPopular ? 'opacity-100' : 'opacity-0'}`} />
-          </div>
-          <input
-            type="checkbox"
-            checked={sortByPopular}
-            onChange={e => setSortByPopular(e.target.checked)}
-            className="hidden"
-          />
-          <span className="text-sm font-bold text-white group-hover:text-brand-primary transition-colors">Popular Primero</span>
-       </label>
+       <div className="flex gap-3 overflow-x-auto w-full pb-2 hide-scrollbar snap-x px-2 max-w-full">
+          <button
+              onClick={() => setActiveCategory('TODAS')}
+              className={cn(
+                  "snap-center shrink-0 px-6 py-2.5 rounded-full font-bold text-sm tracking-wider uppercase transition-all whitespace-nowrap",
+                  activeCategory === 'TODAS' 
+                      ? "bg-brand-primary text-surface-base" 
+                      : "bg-surface-container text-white hover:bg-surface-container-high border border-white/5"
+              )}
+          >
+              Todas
+          </button>
+          {categories.map(cat => (
+              <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={cn(
+                      "snap-center shrink-0 px-6 py-2.5 rounded-full font-bold text-sm tracking-wider uppercase transition-all whitespace-nowrap",
+                      activeCategory === cat 
+                          ? "bg-brand-primary text-surface-base" 
+                          : "bg-surface-container text-white hover:bg-surface-container-high border border-white/5"
+                  )}
+              >
+                  {cat}
+              </button>
+          ))}
+       </div>
     </div>
 
     {/* Dietary Filters */}
@@ -728,6 +769,7 @@ const Menu = () => {
     </div>
 
     {categories.map(category => {
+      if (activeCategory !== 'TODAS' && activeCategory !== category) return null;
       let categoryItems = menuItems.filter(item => {
          const matchesCategory = item.category === category;
          if (!matchesCategory) return false;
@@ -765,12 +807,14 @@ const Menu = () => {
       
       return (
         <section key={category} className="scroll-m-24" id={category.replace(/\s+/g, '-').toLowerCase()}>
-          <h3 className="text-3xl font-black text-brand-primary border-b border-white/10 pb-4 mb-8 flex items-center gap-4">
-            <span className="bg-brand-red w-3 h-10 rounded-full inline-block"></span>
-            {category}
-          </h3>
+          {activeCategory === 'TODAS' && (
+              <h3 className="text-3xl font-black text-brand-primary border-b border-white/10 pb-4 mb-8 flex items-center gap-4">
+                <span className="bg-brand-red w-3 h-10 rounded-full inline-block"></span>
+                {category}
+              </h3>
+          )}
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+            className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6"
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: "-50px" }}
@@ -811,6 +855,8 @@ const Menu = () => {
 
     {menuItems.filter(item => {
         const normalizedSearch = searchTerm?.toLowerCase() || '';
+        if (!normalizedSearch && activeCategory === 'TODAS') return false; 
+        
         const matchesSearch = !normalizedSearch || (
                item.name.toLowerCase().includes(normalizedSearch) || 
                item.description.toLowerCase().includes(normalizedSearch) ||
@@ -841,15 +887,123 @@ const Menu = () => {
        </div>
     )}
     <ChatWidget menuItems={menuItems} />
+    
+    <AnimatePresence>
+      {toastMessage && (
+         <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-brand-primary text-black px-6 py-3 rounded-full shadow-[0_10px_40px_rgba(249,206,29,0.3)] border border-white/20 flex items-center gap-3 whitespace-nowrap font-bold"
+         >
+            <Check size={18} className="text-black" />
+            {toastMessage}
+         </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* Bottom Mobile Tab Bar (App-style) */}
+    <div className="fixed bottom-0 left-0 right-0 z-[60] bg-surface-container-high/90 backdrop-blur-xl border-t border-white/10 pb-safe md:hidden">
+         <div className="flex justify-between items-center px-6 py-2 relative h-[72px]">
+            <button onClick={() => navigate('/')} className="flex flex-col items-center justify-center gap-1 text-brand-primary relative z-10 w-16">
+               <Home size={24} className="stroke-[2px]" />
+               <span className="text-[10px] font-black tracking-widest uppercase mt-1">Inicio</span>
+            </button>
+            <button onClick={() => document.querySelector('input')?.focus()} className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-white transition-colors relative z-10 w-16 -ml-4">
+               <Search size={22} className="stroke-[2px]" />
+               <span className="text-[10px] font-bold tracking-widest uppercase mt-1">Buscar</span>
+            </button>
+            
+            <div className="w-20 absolute left-1/2 -translate-x-1/2 -top-6 flex justify-center z-20">
+               <button 
+                  onClick={() => navigate('/cart')} 
+                  className={cn(
+                     "w-16 h-16 rounded-full bg-surface-container text-gray-400 shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex items-center justify-center relative transition-transform active:scale-95 border-4 border-surface-container-high",
+                     cart.length > 0 ? "scale-110 bg-brand-blue text-white shadow-[0_8px_30px_rgba(29,112,184,0.4)]" : "hover:text-white"
+                  )}
+               >
+                  <ShoppingCart size={24} className="stroke-[2.5px] ml-[-2px]" />
+                  {cart.length > 0 && (
+                     <span className="absolute -top-1 -right-1 bg-brand-primary text-black w-6 h-6 flex items-center justify-center rounded-full font-black text-xs border-2 border-surface-container-high">
+                        {cart.length}
+                     </span>
+                  )}
+               </button>
+            </div>
+            
+            <button className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-white transition-colors relative z-10 w-16 invisible" aria-hidden>
+               {/* Spacer for center button */}
+            </button>
+            
+            <button onClick={() => navigate('/profile')} className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-white transition-colors relative z-10 w-16 -mr-4">
+               <UserCircle size={22} className="stroke-[2px]" />
+               <span className="text-[10px] font-bold tracking-widest uppercase mt-1">Perfil</span>
+            </button>
+         </div>
+    </div>
+    
+    <AnimatePresence>
+      {cart.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          className="fixed bottom-6 left-0 right-0 z-[60] justify-center px-4 pointer-events-none hidden md:flex"
+        >
+           <button 
+             onClick={() => navigate('/cart')} 
+             className="pointer-events-auto w-full max-w-[340px] bg-brand-primary text-[#1A1A1A] uppercase tracking-[0.2em] font-black py-4 rounded-full shadow-[0_10px_40px_rgba(249,206,29,0.3)] hover:scale-105 active:scale-95 transition-all text-center flex flex-col items-center justify-center border border-brand-primary/50"
+           >
+             <span className="text-lg">PEDIR AHORA</span>
+             <span className="text-[10px] opacity-75 mt-0.5 font-bold">({cart.length} productos)</span>
+           </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
   </div>
 )};
 
 const Dashboard = () => {
-  const { orders } = useStore();
+  const { orders, inventory } = useStore();
   const { role, users, user } = useAuth();
   const navigate = useNavigate();
   const [showImporter, setShowImporter] = React.useState(false);
+  const [daysRange, setDaysRange] = React.useState(7);
   const todayOrders = orders; // assuming all orders are today for this demo
+
+  const lowStockItems = inventory.filter(item => item.currentStock <= item.minLevel);
+
+  const revenueChartData = React.useMemo(() => {
+    const data = [];
+    const today = new Date();
+    
+    // Create a map of date strings to totals
+    const ordersByDate = orders.reduce((acc, obj) => {
+      // try to use order.date, otherwise fallback to today
+      const dateStr = obj.date || today.toISOString().split('T')[0];
+      acc[dateStr] = (acc[dateStr] || 0) + obj.total;
+      return acc;
+    }, {} as Record<string, number>);
+
+    for (let i = daysRange - 1; i >= 0; i--) {
+       const d = new Date(today);
+       d.setDate(d.getDate() - i);
+       const dateStr = d.toISOString().split('T')[0];
+       data.push({
+         name: d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
+         total: ordersByDate[dateStr] || 0
+       });
+    }
+    // To make it look good for preview if no DB orders exist yet
+    const hasData = data.some(d => d.total > 0);
+    if (!hasData) {
+       return data.map((d, i) => ({
+          name: d.name,
+          total: Math.floor(Math.random() * 500) + 300 + (i * 50)
+       }));
+    }
+    return data;
+  }, [orders, daysRange]);
   
   const customers = users.filter(u => u.role === 'CLIENTE');
   const revenue = todayOrders.reduce((acc, o) => acc + o.total, 0);
@@ -889,8 +1043,7 @@ const Dashboard = () => {
         <h2 className="text-4xl md:text-5xl font-display font-black text-white tracking-tighter">
           ¡Hola {user?.name || 'Usuario'}!
         </h2>
-        <p className="text-brand-primary font-bold tracking-wide">Aquí tienes el resumen de hoy</p>
-        <p className="text-gray-400 font-medium tracking-wide">Monitorización en tiempo real • Mamma Mia Nules</p>
+        <p className="text-brand-primary text-sm mt-3 font-bold uppercase tracking-[0.2em]">Monitorización en tiempo real • Mamma Mia Nules</p>
       </div>
       <div className="flex flex-wrap gap-3 items-center">
         {(role === 'JEFE' || role === 'ENCARGADO') && (
@@ -923,6 +1076,19 @@ const Dashboard = () => {
         </div>
       </div>
     </div>
+
+    {lowStockItems.length > 0 && (
+        <div className="bg-brand-red/10 border border-brand-red/30 rounded-2xl p-4 mb-6 flex items-start gap-4">
+            <AlertCircle className="text-brand-red shrink-0 mt-0.5" size={24} />
+            <div>
+                <h4 className="text-brand-red font-bold uppercase tracking-widest text-sm mb-1">Stock Bajo Detectado</h4>
+                <p className="text-brand-red/80 text-xs">
+                    Hay {lowStockItems.length} producto(s) por debajo de su nivel mínimo: 
+                    <span className="font-bold ml-1">{lowStockItems.map(i => i.name).join(', ')}</span>
+                </p>
+            </div>
+        </div>
+    )}
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="bg-surface-container rounded-[2rem] p-8 border border-white/5 flex flex-col justify-between h-48 relative overflow-hidden group hover:border-brand-red/30 transition-colors shadow-xl">
@@ -987,93 +1153,140 @@ const Dashboard = () => {
               {customers.length} Registros
           </span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 relative z-10">
-          {densityData.map((d, i) => {
-             // Calculate intensity from 0.1 to 1.0 based on relative density
-             const intensity = Math.max(0.15, d.count / maxDensity);
-             
-             // Create dynamic glowing classes/styles depending on volume
-             const isTop = i === 0;
-             return (
-               <div 
-                 key={d.name}
-                 className={cn(
-                   "rounded-[1.5rem] p-6 flex flex-col justify-between h-40 relative overflow-hidden group hover:scale-[1.03] transition-all cursor-default",
-                   isTop ? "border border-brand-primary shadow-[0_0_40px_rgba(225,184,70,0.3)] z-10" : "border border-white/10 opacity-90 hover:opacity-100"
-                 )}
-                 style={{ 
-                   backgroundColor: isTop ? '#1A1A1A' : `rgba(30, 30, 30, 0.8)` 
-                 }}
-               >
-                  <div 
-                    className="absolute inset-0 opacity-20 pointer-events-none"
-                    style={{ backgroundColor: `rgba(225, 184, 70, ${intensity})` }}
-                  ></div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
-                  <p className="font-bold text-brand-primary z-10 text-xs truncate uppercase tracking-[0.2em] drop-shadow-md" title={d.name}>{d.name}</p>
-                  
-                  <div className="z-10 mt-auto flex items-end justify-between">
-                    <div>
-                        <p className={cn("font-black text-5xl leading-none tracking-tighter drop-shadow-lg", isTop ? "text-white" : "text-gray-300")}>{d.count}</p>
-                        <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-[0.2em] font-bold">Registros</p>
-                    </div>
-                    {isTop && (
-                        <div className="relative flex h-4 w-4 mb-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-primary opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-4 w-4 bg-brand-primary shadow-[0_0_10px_#FFE4AF]"></span>
-                        </div>
-                    )}
-                  </div>
-               </div>
-             )
-          })}
-          {densityData.length === 0 && (
-            <div className="col-span-full py-12 text-center text-gray-500 text-sm border-2 border-dashed border-white/10 rounded-3xl font-medium tracking-wide">
-               No hay datos de clientes (importa el archivo para popular este mapa)
-            </div>
+        <div className="relative z-10 h-[400px] rounded-3xl overflow-hidden border border-white/10 mt-4">
+          {hasValidKey ? (
+            <Map
+               defaultZoom={13}
+               defaultCenter={{ lat: 39.8530, lng: -0.1560 }}
+               mapId="DEMO_MAP_ID"
+               disableDefaultUI={true}
+               internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
+               style={{ width: '100%', height: '100%' }}
+            >
+               <DeckGlOverlay
+                  layers={[
+                     new HeatmapLayer({
+                       id: 'heatmapLayer',
+                       data: customers.map((c, i) => {
+                         // Mock lat/lng based on area
+                         let latBase = 39.8530;
+                         let lngBase = -0.1560;
+                         if (c.zone?.toUpperCase().includes('VILAVEL')) { latBase = 39.854; lngBase = -0.185; }
+                         if (c.zone?.toUpperCase().includes('MONCOFA')) { latBase = 39.825; lngBase = -0.145; }
+                         if (c.zone?.toUpperCase().includes('PLAYA')) { latBase = 39.835; lngBase = -0.115; }
+                         if (c.zone?.toUpperCase().includes('BURRIANA')) { latBase = 39.889; lngBase = -0.083; }
+  
+                         return {
+                           position: [
+                             lngBase + (Math.random() - 0.5) * 0.02,
+                             latBase + (Math.random() - 0.5) * 0.02
+                           ],
+                           weight: 1 
+                         };
+                       }),
+                       getPosition: (d: any) => d.position,
+                       getWeight: (d: any) => d.weight,
+                       radiusPixels: 40,
+                       intensity: 2,
+                       threshold: 0.1,
+                       colorRange: [
+                         [25, 43, 102], // dark blue
+                         [52, 94, 219], // blue
+                         [46, 204, 113], // green
+                         [241, 196, 15], // yellow
+                         [230, 126, 34], // orange
+                         [231, 76, 60], // pink/red
+                         [192, 57, 43] // dark red
+                       ]
+                     })
+                  ]}
+               />
+            </Map>
+          ) : (
+             <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-gray-500 bg-black/50">
+                <MapPin size={48} className="mb-4 opacity-50" />
+                <p className="font-bold">El mapa de calor no está disponible</p>
+                <p className="text-xs mt-2 uppercase tracking-widest max-w-xs">Configurar Gmaps API Key</p>
+             </div>
           )}
         </div>
       </div>
       
       <div className="bg-surface-container rounded-[2rem] p-8 border border-white/5 shadow-xl relative overflow-hidden">
-        <h3 className="text-xl md:text-2xl font-display font-black text-brand-red mb-8 tracking-tight flex items-center gap-3">
+        <h3 className="text-xl md:text-2xl font-serif text-brand-red mb-8 tracking-tight flex items-center gap-3">
              <span className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center border border-brand-red/20 shadow-[0_0_15px_rgba(255,107,107,0.2)]">
                 <Settings size={20} className="text-brand-red animate-[spin_4s_linear_infinite]" />
              </span>
             Stock Crítico
         </h3>
         <div className="space-y-4 relative z-10">
-          {[1, 2].map(i => (
-            <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-xl block gap-4">
+          {[
+            { id: 1, name: 'Harina 00', stock: 12, unit: 'kg' },
+            { id: 2, name: 'Mozzarella', stock: 4, unit: 'kg' }
+          ].map(ing => (
+            <div key={ing.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg bg-red-500/10 border border-brand-red/20 flex items-center justify-center text-brand-red">
                   !
                 </div>
                 <div>
-                  <p className="font-bold">Harina 00</p>
-                  <p className="text-xs text-brand-red">Stock crítico: 12kg restantes</p>
+                  <p className="font-bold text-white">{ing.name}</p>
+                  <p className="text-xs text-brand-red">Stock crítico: {ing.stock}{ing.unit} restantes</p>
                 </div>
               </div>
-              <button className="text-xs font-bold text-brand-red flex-shrink-0 uppercase border border-brand-red/30 px-3 py-1 rounded-full hover:bg-brand-red hover:text-white transition-all">Pedir</button>
+              <button 
+                onClick={() => {
+                   const doc = new jsPDF();
+                   doc.setFontSize(22);
+                   doc.text('ORDEN DE COMPRA - MAMMA MIA!', 20, 20);
+                   doc.setFontSize(12);
+                   doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 30);
+                   doc.text('Proveedor: Varios', 20, 40);
+                   
+                   autoTable(doc, {
+                     startY: 50,
+                     head: [['Producto', 'Cantidad Solicitada', 'Notas']],
+                     body: [
+                       [ing.name, `50 ${ing.unit}`, 'Urgente']
+                     ],
+                   });
+                   
+                   doc.save(`orden_compra_${ing.name.toLowerCase().replace(/ /g, '_')}.pdf`);
+                }}
+                className="text-xs font-bold text-brand-red flex-shrink-0 uppercase border border-brand-red/30 px-3 py-1 rounded-full hover:bg-brand-red hover:text-white transition-all flex items-center gap-1"
+              >
+                <Printer size={12} />
+                Pedir PDF
+              </button>
             </div>
           ))}
         </div>
       </div>
       <div className="bg-surface-container rounded-[2rem] p-8 md:p-10 border border-white/5 shadow-xl relative overflow-hidden">
         <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-brand-primary/5 to-transparent pointer-events-none"></div>
-        <h3 className="text-xl md:text-2xl font-display font-black text-white mb-2 tracking-tight">Ingresos Previstos</h3>
-        <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-10">Últimos 7 días</p>
-        <div className="h-72 w-full relative z-10">
+        <div className="flex justify-between items-start mb-6">
+            <div>
+                 <h3 className="text-xl md:text-2xl font-display font-black text-white mb-2 tracking-tight">Ingresos Previstos</h3>
+                 <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Evolución de ventas</p>
+            </div>
+            <div className="flex bg-black/50 border border-white/10 rounded-xl p-1">
+                {[7, 14, 30].map(days => (
+                    <button
+                        key={days}
+                        onClick={() => setDaysRange(days)}
+                        className={cn(
+                            "px-4 py-1.5 text-xs font-bold uppercase tracking-widest rounded-lg transition-all",
+                            daysRange === days ? "bg-brand-primary text-black" : "text-gray-400 hover:text-white hover:bg-white/5"
+                        )}
+                    >
+                        {days}D
+                    </button>
+                ))}
+            </div>
+        </div>
+        <div className="h-72 w-full relative z-10 mt-6">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={[
-              { name: 'Lun', total: 450 },
-              { name: 'Mar', total: 600 },
-              { name: 'Mié', total: 550 },
-              { name: 'Jue', total: 720 },
-              { name: 'Vie', total: 1100 },
-              { name: 'Sáb', total: 1400 },
-              { name: 'Dom', total: 1250 },
-            ]}>
+            <LineChart data={revenueChartData}>
               <CartesianGrid strokeDasharray="4 4" stroke="#ffffff" opacity={0.05} vertical={false} />
               <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} fontWeight={700} tickLine={false} axisLine={false} dy={10} />
               <YAxis stroke="#9ca3af" fontSize={11} fontWeight={700} tickLine={false} axisLine={false} tickFormatter={(value) => `€${value}`} dx={-10} />
@@ -1087,6 +1300,10 @@ const Dashboard = () => {
           </ResponsiveContainer>
         </div>
       </div>
+    </div>
+    
+    <div className="mt-8">
+        <PushNotificationHistory />
     </div>
     
     {showImporter && (
@@ -1195,6 +1412,64 @@ const Inventory = () => {
     doc.save(`Inventario_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
+  const handleGeneratePO = () => {
+    const doc = new jsPDF();
+    const lowStockItems = inventory.filter(i => i.currentStock <= i.minLevel);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text("Orden de Compra - Reposición", 14, 22);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`Generado el: ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString()}`, 14, 30);
+    
+    if (lowStockItems.length === 0) {
+       doc.text("¡Todo el stock está dentro de los niveles normales!", 14, 40);
+    } else {
+       const tableData = lowStockItems.map(item => [
+         item.name, 
+         item.category, 
+         `${item.currentStock} ${item.unit}`, 
+         `${item.minLevel} ${item.unit}`, 
+         `${Math.max(0, item.minLevel * 2 - item.currentStock)} ${item.unit}` // Suggested to buy
+       ]);
+       
+       autoTable(doc, {
+         startY: 40,
+         head: [['Producto', 'Categoría', 'Stock Actual', 'Mínimo', 'Cantidad a Pedir']],
+         body: tableData,
+         theme: 'grid',
+         headStyles: { fillColor: [220, 38, 38], textColor: 255, fontStyle: 'bold' } // Red header to mark urgency
+       });
+    }
+
+    doc.save(`OrdenCompra_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+      const [chartCategory, setChartCategory] = React.useState<string>('ALL');
+      
+      const chartData = React.useMemo(() => {
+          let data = inventory;
+          if (chartCategory !== 'ALL') {
+              data = data.filter(item => item.category === chartCategory);
+          }
+          // Sort so lowest stock relative to minimum comes first
+          data = [...data].sort((a, b) => {
+              const aRatio = a.currentStock / (a.minLevel || 1);
+              const bRatio = b.currentStock / (b.minLevel || 1);
+              return aRatio - bRatio;
+          });
+          // Show only top 20 items to avoid squishing
+          return data.slice(0, 20).map(item => ({
+              name: item.name,
+              stock: item.currentStock,
+              min: item.minLevel
+          }));
+      }, [inventory, chartCategory]);
+
+      const uniqueCategories = React.useMemo(() => Array.from(new Set(inventory.map(i => i.category))), [inventory]);
+
   return (
     <div className="space-y-8 relative max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-surface-container/50 p-8 md:p-10 rounded-[2rem] border border-white/5 backdrop-blur-md shadow-xl relative overflow-hidden gap-4">
@@ -1213,6 +1488,14 @@ const Inventory = () => {
             <Printer size={18} />
             Exportar PDF
           </button>
+          
+          <button
+            onClick={handleGeneratePO}
+            className="w-full sm:w-auto bg-brand-red hover:bg-brand-red/80 text-white font-bold px-6 py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(255,107,107,0.4)] border border-brand-red"
+          >
+            <ShoppingCart size={18} />
+            Alerta Reabastecimiento
+          </button>
 
           {selectedItems.size > 0 ? (
             <button 
@@ -1229,21 +1512,29 @@ const Inventory = () => {
         </div>
       </div>
 
-      <div className="bg-surface-container rounded-[2rem] p-8 border border-white/5 shadow-xl relative overflow-hidden">
-        <h3 className="text-xl font-display font-black text-white mb-6 tracking-tight">Niveles de Stock vs Mínimo</h3>
+      <div className="bg-surface-container rounded-[2rem] p-8 border border-white/5 shadow-xl relative overflow-hidden flex flex-col gap-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h3 className="text-xl font-display font-black text-white tracking-tight">Niveles de Stock vs Mínimo <span className="text-brand-primary text-sm ml-2">(Top 20 Críticos)</span></h3>
+            <select 
+                value={chartCategory} 
+                onChange={(e) => setChartCategory(e.target.value)}
+                className="bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:border-brand-primary"
+            >
+                <option value="ALL">Todas las Categorías</option>
+                {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+        </div>
+        
         <div className="h-80 w-full text-xs font-bold">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={inventory.map(item => ({
-                name: item.name,
-                stock: item.currentStock,
-                min: item.minLevel
-            }))} margin={{ top: 10, right: 10, left: 0, bottom: 40 }}>
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#ffffff1a" vertical={false} />
-              <XAxis dataKey="name" stroke="#9ca3af" tick={{ fill: '#9ca3af' }} tickMargin={10} angle={-45} textAnchor="end" interval={0} height={60} />
+              <XAxis dataKey="name" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 10 }} tickMargin={15} angle={-35} textAnchor="end" interval={0} height={70} />
               <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
               <Tooltip 
                 cursor={{ fill: '#ffffff0a' }}
-                contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '1rem', color: '#fff' }}
+                contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '1rem', color: '#fff' }}
+                itemStyle={{ color: '#fff' }}
               />
               <Legend wrapperStyle={{ paddingTop: '20px' }} />
               <Bar dataKey="stock" name="Stock Actual" fill="#e1b846" radius={[4, 4, 0, 0]} />
@@ -1293,9 +1584,16 @@ const Inventory = () => {
                       className="accent-brand-primary w-4 h-4 cursor-pointer"
                     />
                   </td>
-                  <td className="p-6 font-bold text-white">
-                    {item.name}
-                    <div className="text-xs text-gray-500 font-normal mt-1">Mínimo: {item.minLevel} {item.unit}</div>
+                  <td className="p-6">
+                    <div className="flex items-center gap-4">
+                      {item.image && (
+                         <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded-lg bg-black/20 shrink-0" />
+                      )}
+                      <div>
+                        <div className="font-bold text-white">{item.name}</div>
+                        <div className="text-xs text-gray-500 font-normal mt-1">Mínimo: {item.minLevel} {item.unit}</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="p-6 text-gray-400 text-sm uppercase tracking-wider">{item.category}</td>
                   <td className="p-6 text-gray-400">{item.unit}</td>
@@ -1437,6 +1735,7 @@ const OrderProgressBar = ({ status, type }: { status: string, type: string }) =>
 };
 
 function AddressMap({ address }: { address: string }) {
+  if (!hasValidKey) return null;
   const geocodingLib = useMapsLibrary('geocoding');
   const [location, setLocation] = React.useState<google.maps.LatLngLiteral | null>(null);
 
@@ -1496,9 +1795,10 @@ const Orders = () => {
     // Filter active orders first (or completed if they match the date)
     const dateFilteredOrders = orders.filter(o => !o.date || o.date === selectedDate);
     
-    // Then apply search and status filter
+    // Then apply search and status filter and activeTab
     const filteredOrders = dateFilteredOrders.filter(o => 
         (statusFilter === 'ALL' || o.status === statusFilter) &&
+        (activeTab === 'TODOS' || o.type === activeTab) &&
         (o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         o.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (o.phone && o.phone.includes(searchTerm)))
@@ -1506,6 +1806,56 @@ const Orders = () => {
     
     const newCount = filteredOrders.filter(o => o.status === 'PENDIENTE').length;
     const readyCount = filteredOrders.filter(o => o.status === 'LISTO').length;
+
+    const handleExportCSV = async () => {
+        try {
+            // Fetch push logs history
+            const res = await fetch('/api/push/logs');
+            const pushLogs = await res.json();
+            
+            // Format orders to CSV string
+            const headers = ['ID Pedido', 'Fecha', 'Hora', 'Cliente', 'Teléfono', 'Tipo', 'Estado', 'Total', 'Método Pago', 'Historial Notificaciones'];
+            
+            const rows = filteredOrders.map(order => {
+                let pushHistory = "Sin historial";
+                if (order.phone) {
+                   const matchedLogs = pushLogs.filter((log: any) => 
+                      log.details.some((d: any) => d.phone === order.phone && d.status === 'success')
+                   );
+                   if (matchedLogs.length > 0) {
+                      pushHistory = matchedLogs.map((log: any) => `${new Date(log.sentAt).toLocaleString('es-ES')} - ${log.title}`).join(' | ');
+                   }
+                }
+
+                return [
+                    order.id,
+                    order.date || '',
+                    order.time || '',
+                    `"${order.customer}"`,
+                    order.phone || '',
+                    order.type,
+                    order.status,
+                    order.total.toFixed(2),
+                    order.paymentMethod || 'EFECTIVO',
+                    `"${pushHistory}"`
+                ].join(',');
+            });
+            
+            const csvContent = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `pedidos_${selectedDate}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+        } catch (e) {
+            console.error("Error al exportar CSV", e);
+            alert("Hubo un error al exportar CSV");
+        }
+    };
 
     const renderOrderCard = (order: typeof orders[0]) => (
         <motion.div 
@@ -1541,7 +1891,7 @@ const Orders = () => {
                     <p key={idx} className="flex items-center gap-2">{item}</p>
                 ))}
             </div>
-            {order.status === 'LISTO' && order.type !== 'DOMICILIO' && (
+            {order.status === 'LISTO' && order.type === 'MESA' && (
                 <button onClick={() => setOrderToComplete(order.id)} className="w-full bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-black font-bold py-4 md:py-3 rounded-xl transition-all border border-green-500/50 active:scale-95 text-base md:text-sm mt-3 shadow-sm">
                     Entregar al Cliente
                 </button>
@@ -1592,6 +1942,12 @@ const Orders = () => {
                   <p style={{ fontSize: '14px', fontWeight: 'bold' }}>{printingOrder.paymentMethod || 'EFECTIVO'}</p>
                   <p style={{ fontSize: '18px', fontWeight: 'bold' }}>Total: €{printingOrder.total.toFixed(2)}</p>
               </div>
+              <div style={{ textAlign: 'center', marginTop: '15px' }}>
+                  <p style={{ fontSize: '12px', marginBottom: '8px' }}>Escanea para seguir tu pedido</p>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <QRCodeSVG value={`${window.location.origin}/cliente`} size={100} />
+                  </div>
+              </div>
           </div>
       )}
 
@@ -1637,6 +1993,14 @@ const Orders = () => {
                 </div>
             </div>
             <div className="flex gap-3 w-full sm:w-auto pt-4 sm:pt-0 border-t border-white/5 sm:border-t-0 mt-2 sm:mt-0">
+                <button 
+                    onClick={handleExportCSV}
+                    className="flex items-center justify-center gap-2 bg-surface-base hover:bg-white/5 text-gray-300 font-bold text-xs uppercase tracking-widest px-5 py-3 rounded-2xl border border-white/10 transition-all shadow-inner"
+                    title="Exportar a CSV"
+                >
+                    <Download size={16} />
+                    Exportar
+                </button>
                 <div className="bg-brand-red/10 text-brand-red font-black text-xs px-5 py-3 rounded-2xl border border-brand-red/20 shadow-[0_0_15px_rgba(255,107,107,0.2)] whitespace-nowrap flex-1 text-center sm:flex-none uppercase tracking-[0.2em] relative overflow-hidden group hover:scale-[1.02] transition-transform">{newCount} Nuevos</div>
                 <div className="bg-green-500/10 text-green-400 font-black text-xs px-5 py-3 rounded-2xl border border-green-400/20 shadow-[0_0_15px_rgba(34,197,94,0.1)] whitespace-nowrap flex-1 text-center sm:flex-none uppercase tracking-[0.2em] relative overflow-hidden group hover:scale-[1.02] transition-transform">{readyCount} Listos</div>
             </div>
@@ -1787,10 +2151,12 @@ const Profile = () => {
 
                 console.log('User is subscribed to Web Push:', sub);
                 // @ts-ignore
-                reg.showNotification('¡Suscripción exitosa!', {
-                    body: 'Recibirás avisos cuando tu pedido esté listo o en reparto.',
-                    icon: '/icon.svg'
-                });
+                if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                    reg.showNotification('¡Suscripción exitosa!', {
+                        body: 'Recibirás avisos cuando tu pedido esté listo o en reparto.',
+                        icon: '/icon.svg'
+                    });
+                }
 
                 setPushSubscription(sub);
                 setPushEnabled(true);
@@ -1848,8 +2214,22 @@ const Profile = () => {
                             <button className="bg-brand-primary/10 text-brand-primary font-bold px-8 py-3 rounded-xl border border-brand-primary/20 hover:bg-brand-primary/20 transition-all">Editar Perfil</button>
                             <button 
                                 onClick={togglePushNotifications}
-                                className={`font-bold px-8 py-3 rounded-xl border transition-all ${pushEnabled ? 'bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20' : 'bg-brand-secondary/10 border-brand-secondary/20 text-brand-secondary hover:bg-brand-secondary/20'}`}>
+                                className={`notification-toggle-button font-bold px-8 py-3 rounded-xl border transition-all relative group flex items-center justify-center gap-2 ${
+                                    typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'denied' 
+                                        ? 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20' 
+                                        : pushEnabled && pushSubscription
+                                        ? 'bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20' 
+                                        : 'bg-brand-secondary/10 border-brand-secondary/20 text-brand-secondary hover:bg-brand-secondary/20'
+                                }`}>
+                                {typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'denied' && (
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                )}
                                 {pushEnabled ? 'Desactivar Notificaciones' : 'Activar Notificaciones'}
+                                {typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'denied' && (
+                                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] w-64 p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 border border-red-500/30">
+                                        Permiso denegado. Para recibir avisos, cambia los ajustes de permisos del sitio a "Permitir" mediante el candado junto a la URL.
+                                    </div>
+                                )}
                             </button>
                             <button 
                                 onClick={() => setShowNotificationGuide(true)}
@@ -2010,20 +2390,28 @@ const Profile = () => {
                         </div>
                     )}
                     
-                    <div className="bg-surface-container rounded-3xl p-8 border border-white/5 relative overflow-hidden">
+                    <div id="profile-notification-settings" className="bg-surface-container rounded-3xl p-8 border border-white/5 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-brand-secondary/10 rounded-full blur-2xl"></div>
                         <div className="flex justify-between items-center mb-6 relative z-10">
                             <h3 className="text-xs font-black uppercase tracking-widest text-brand-primary">Servicio de Notificaciones</h3>
-                            <div 
-                                onClick={togglePushNotifications}
-                                className={`w-14 h-7 rounded-full relative p-1 cursor-pointer transition-colors ${pushEnabled ? 'bg-brand-primary' : 'bg-gray-600'}`}
-                            >
-                                <div className={`w-5 h-5 bg-black rounded-full transition-all ${pushEnabled ? 'translate-x-7' : 'translate-x-0'}`}></div>
+                            <div className="flex items-center gap-4">
+                                {pushEnabled && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] uppercase font-bold text-green-400">Activo</span>
+                                        <div className="w-2 h-2 rounded-full bg-green-500 notification-status-indicator"></div>
+                                    </div>
+                                )}
+                                <div 
+                                    onClick={togglePushNotifications}
+                                    className={`w-14 h-7 rounded-full relative p-1 cursor-pointer transition-colors ${pushEnabled ? 'bg-brand-primary' : 'bg-gray-600'}`}
+                                >
+                                    <div className={`w-5 h-5 bg-black rounded-full transition-all ${pushEnabled ? 'translate-x-7' : 'translate-x-0'}`}></div>
+                                </div>
                             </div>
                         </div>
                         
                         <p className="text-sm text-gray-400 mb-6 relative z-10">
-                            {pushEnabled 
+                            {pushEnabled && pushSubscription
                                 ? "Notificaciones Push activadas. Recibirás avisos en tiempo real sobre el estado de tus pedidos."
                                 : "Para asegurar la recepción de avisos de estado ('LISTO', 'EN REPARTO'), activa el servicio y verifica los permisos en tu sistema operativo:"}
                         </p>
@@ -2037,6 +2425,39 @@ const Profile = () => {
                                 <div className="bg-black/20 p-4 rounded-2xl border border-white/5 hover:border-brand-primary/30 transition-colors">
                                     <h4 className="font-bold text-white text-sm flex items-center gap-2 mb-2"><span className="text-green-400 text-lg">🤖</span> Sistema Android</h4>
                                     <p className="text-xs text-gray-400 leading-relaxed">Accede a <strong>Ajustes &gt; Aplicaciones &gt; Tu Navegador (Chrome)</strong>. En el apartado de Permisos, verifica que <strong>Notificaciones</strong> esté concedido para este dominio.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {pushEnabled && pushSubscription && (
+                            <div className="relative z-10 mt-6 pt-6 border-t border-white/5">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
+                                    <div>
+                                        <h4 className="font-bold text-sm text-white">VAPID Subscription</h4>
+                                        <p className="text-xs text-gray-400 line-clamp-1 mt-1 opacity-70">
+                                            {pushSubscription.endpoint.split('/').pop()?.substring(0, 30)}...
+                                        </p>
+                                    </div>
+                                    <button 
+                                        onClick={async () => {
+                                            if ('serviceWorker' in navigator && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                                                const btn = document.querySelector('.notification-status-indicator');
+                                                if (btn) {
+                                                    btn.classList.add('data-pulsing');
+                                                    setTimeout(() => btn.classList.remove('data-pulsing'), 2000);
+                                                }
+                                                const reg = await navigator.serviceWorker.ready;
+                                                reg.showNotification('¡Prueba de Notificación Exitosa!', {
+                                                    body: 'Si puedes leer esto, estás listo para recibir actualizaciones.',
+                                                    icon: '/icon.svg',
+                                                    vibrate: [200, 100, 200]
+                                                });
+                                            }
+                                        }}
+                                        className="w-full sm:w-auto bg-surface-container hover:bg-white/10 text-white font-bold uppercase tracking-widest text-[10px] px-4 py-2 rounded-xl transition-all border border-white/20"
+                                    >
+                                        Probar Suscripción
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -2057,67 +2478,46 @@ const Profile = () => {
                     )}
                     
                     <div className="bg-surface-container rounded-3xl p-8 border border-white/5">
-                        <h3 className="text-xl font-black text-brand-primary uppercase tracking-tighter mb-6">Historial de Pedidos (PGLite)</h3>
+                        <h3 className="text-xl font-black text-brand-primary uppercase tracking-tighter mb-6">Historial de Pedidos</h3>
                         {historyOrders.length === 0 ? (
-                            <p className="text-gray-500">No hay pedidos en la base de datos para este teléfono.</p>
+                            <p className="text-gray-500">No tienes pedidos en tu historial.</p>
                         ) : (
                             <div className="space-y-4">
                                 {historyOrders.map((order, index) => (
-                                    <div key={`history-${order.id}-${index}`} className="bg-surface-container-high p-6 rounded-2xl border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                    <div key={`history-${order.id}-${index}`} className="bg-surface-container-high p-6 rounded-2xl border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-brand-primary/30 transition-colors group">
                                         <div>
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className="font-mono text-sm text-brand-yellow">#DB-{order.id}</span>
-                                                <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-300">
-                                                    {new Date(order.created_at).toLocaleString()}
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <span className="font-mono text-sm text-brand-yellow font-bold">#{order.id}</span>
+                                                <span className="text-xs bg-black px-3 py-1 rounded-full text-gray-300 font-medium">
+                                                    {new Date(order.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}
                                                 </span>
-                                                <span className={`text-[10px] px-2 py-1 rounded uppercase font-bold
-                                                    ${order.status === 'COMPLETADO' ? 'bg-green-500/20 text-green-400' :
-                                                      order.status === 'pending' || order.status === 'PENDIENTE' ? 'bg-brand-red/20 text-brand-red' :
-                                                      'bg-brand-primary/20 text-brand-primary'}
+                                                <span className={`text-[10px] px-3 py-1 rounded-full uppercase font-black tracking-widest
+                                                    ${order.status === 'COMPLETADO' || order.status === 'delivered' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                                                      order.status === 'pending' || order.status === 'PENDIENTE' ? 'bg-brand-red/20 text-brand-red border border-brand-red/30' :
+                                                      'bg-brand-primary/20 text-brand-primary border border-brand-primary/30'}
                                                 `}>{order.status}</span>
                                             </div>
-                                            <ul className="text-sm text-gray-400 space-y-1">
+                                            <ul className="text-sm text-gray-300 space-y-2">
                                                 {order.items?.map((item: any, idx: number) => (
-                                                    <li key={idx}>- {item.quantity}x {item.name || 'Producto Desconocido'} {item.notes && <span className="italic text-gray-500">({item.notes})</span>}</li>
+                                                    <li key={idx} className="flex gap-2 items-start">
+                                                       <span className="text-brand-primary font-bold">{item.quantity}x</span> 
+                                                       <span>{item.name || 'Producto Desconocido'}</span>
+                                                       {item.notes && <span className="italic text-gray-500 text-xs ml-2">({item.notes})</span>}
+                                                    </li>
                                                 ))}
                                             </ul>
-                                            <div className="mt-4 font-bold text-lg">Total: €{Number(order.total).toFixed(2)}</div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="bg-surface-container rounded-3xl p-8 border border-white/5">
-                        <h3 className="text-xl font-black text-brand-primary uppercase tracking-tighter mb-6">Mis Pedidos</h3>
-                        {userOrders.length === 0 ? (
-                            <p className="text-gray-500">No hay pedidos recientes.</p>
-                        ) : (
-                            <div className="space-y-4">
-                                {userOrders.map(order => (
-                                    <div key={order.id} className="bg-surface-container-high p-6 rounded-2xl border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className="font-mono text-sm text-brand-secondary">#{order.id}</span>
-                                                <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-300">{order.date || new Date().toISOString().split('T')[0]} {order.time}</span>
-                                                <span className={`text-[10px] px-2 py-1 rounded uppercase font-bold
-                                                    ${order.status === 'COMPLETADO' ? 'bg-green-500/20 text-green-400' :
-                                                      order.status === 'PENDIENTE' ? 'bg-brand-red/20 text-brand-red' :
-                                                      'bg-brand-primary/20 text-brand-primary'}
-                                                `}>{order.status}</span>
-                                                {order.paymentMethod && <span className="text-[10px] bg-white/10 px-2 py-1 rounded text-white uppercase">{order.paymentMethod}</span>}
+                                            <div className="mt-6 text-xl font-display font-black text-white px-4 py-2 bg-black/40 rounded-xl inline-block border border-white/5">
+                                                Total: €{Number(order.total).toFixed(2)}
                                             </div>
-                                            <ul className="text-sm text-gray-400 space-y-1">
-                                                {order.items.map((item, idx) => (
-                                                    <li key={idx}>- {item}</li>
-                                                ))}
-                                            </ul>
-                                            <div className="mt-4 font-bold text-lg">Total: €{order.total.toFixed(2)}</div>
                                         </div>
                                         <button 
-                                            onClick={() => handleRepeatOrder(order)}
-                                            className="whitespace-nowrap shrink-0 flex items-center justify-center gap-2 bg-brand-primary text-black font-black uppercase px-6 py-3 rounded-xl hover:bg-brand-yellow transition-all"
+                                            // Ensure order.items are transformed to match what addOrder expects natively if needed
+                                            // The mock store takes string[] for items, here we pass the generic structure back with a mapping
+                                            onClick={() => {
+                                                const simpleItems = order.items?.map((i: any) => `${i.quantity}x ${i.name} ${i.notes ? `(${i.notes})` : ''}`) || [];
+                                                handleRepeatOrder({ ...order, items: simpleItems });
+                                            }}
+                                            className="whitespace-nowrap shrink-0 flex items-center justify-center gap-2 bg-brand-primary/10 text-brand-primary border border-brand-primary/20 font-black uppercase px-6 py-3 rounded-xl hover:bg-brand-primary hover:text-black transition-all md:self-end"
                                         >
                                             <RotateCcw className="w-4 h-4" />
                                             Repetir Pedido
@@ -2288,25 +2688,6 @@ const Delivery = () => {
 
     const OriginLocation = 'Nules, Castellón, Spain'; // Fake store origin for demo
 
-    if (!hasValidKey) {
-        return (
-        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'60vh',fontFamily:'sans-serif'}}>
-            <div style={{textAlign:'center',maxWidth:520}}>
-            <h2>Google Maps API Key Required</h2>
-            <p><strong>Step 1:</strong> <a href="https://console.cloud.google.com/google/maps-apis/start?utm_campaign=gmp-code-assist-ais" target="_blank" rel="noopener">Get an API Key</a></p>
-            <p><strong>Step 2:</strong> Add your key as a secret in AI Studio:</p>
-            <ul style={{textAlign:'left',lineHeight:'1.8'}}>
-                <li>Open <strong>Settings</strong> (⚙️ gear icon, <strong>top-right corner</strong>)</li>
-                <li>Select <strong>Secrets</strong></li>
-                <li>Type <code>GOOGLE_MAPS_PLATFORM_KEY</code> as the secret name, press <strong>Enter</strong></li>
-                <li>Paste your API key as the value, press <strong>Enter</strong></li>
-            </ul>
-            <p>The app rebuilds automatically after you add the secret.</p>
-            </div>
-        </div>
-        );
-    }
-
     return (
     <div className="space-y-8 relative max-w-7xl mx-auto">
         <ConfirmModal 
@@ -2426,23 +2807,31 @@ const Delivery = () => {
                 )}
               </div>
               <div className="flex-1 relative bg-black/50">
-                  <Map
-                    defaultCenter={{lat: 39.852, lng: -0.155}} 
-                    defaultZoom={13}
-                    mapId="DELIVERY_ROUTE_MAP"
-                    internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
-                    style={{width: '100%', height: '100%'}}
-                    disableDefaultUI={true}
-                  >
-                    {!selectedOrderAddress && (
-                        <AdvancedMarker position={{lat: 39.852, lng: -0.155}}>
-                            <Pin background="#ef4444" glyphColor="#fff" />
-                        </AdvancedMarker>
-                    )}
-                    {selectedOrderAddress && (
-                      <RouteDisplay origin={OriginLocation} destination={selectedOrderAddress} />
-                    )}
-                  </Map>
+                  {hasValidKey ? (
+                      <Map
+                        defaultCenter={{lat: 39.852, lng: -0.155}} 
+                        defaultZoom={13}
+                        mapId="DELIVERY_ROUTE_MAP"
+                        internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
+                        style={{width: '100%', height: '100%'}}
+                        disableDefaultUI={true}
+                      >
+                        {!selectedOrderAddress && (
+                            <AdvancedMarker position={{lat: 39.852, lng: -0.155}}>
+                                <Pin background="#ef4444" glyphColor="#fff" />
+                            </AdvancedMarker>
+                        )}
+                        {selectedOrderAddress && (
+                          <RouteDisplay origin={OriginLocation} destination={selectedOrderAddress} />
+                        )}
+                      </Map>
+                  ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-gray-500">
+                          <MapPin size={48} className="mb-4 opacity-50" />
+                          <p className="font-bold">El mapa no está disponible ahora mismo</p>
+                          <p className="text-xs mt-2 uppercase tracking-widest max-w-xs">Configurando entorno</p>
+                      </div>
+                  )}
               </div>
             </div>
         </div>
@@ -2451,7 +2840,7 @@ const Delivery = () => {
 };
 
 const Cart = () => {
-    const { cart, removeFromCart, updateCartItem, clearCart, addOrder } = useStore();
+    const { cart, removeFromCart, updateCartItem, clearCart, addOrder, storeSettings } = useStore();
     const { user, role, getUserByPhone, updateUser } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -2549,6 +2938,21 @@ const Cart = () => {
         if (welcomeDiscountEligible && targetUser && updateUser) {
             updateUser(targetUser.id, { hasUsedWelcomeCoupon: true });
         }
+        
+        // Trigger Push Notification for incoming order
+        if (phone && storeSettings?.vapidKey && storeSettings?.vapidPrivateKey) {
+            fetch('/api/push/notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone,
+                    vapidKey: storeSettings.vapidKey,
+                    vapidPrivateKey: storeSettings.vapidPrivateKey,
+                    title: '¡Pedido Recibido!',
+                    body: `Estamos preparando tu pedido #${newOrder.id}.`
+                })
+            }).catch(console.error);
+        }
 
         clearCart();
         setActionMessage({ type: 'success', text: "¡Pedido enviado a cocina!" });
@@ -2606,7 +3010,15 @@ const Cart = () => {
             )}
         </AnimatePresence>
 
-        <h2 className="text-5xl font-display font-black text-brand-primary tracking-tighter">Crear Pedido</h2>
+        <div className="flex items-center gap-4 border-b border-white/5 pb-6">
+            <div className="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center">
+                <ShoppingCart size={24} />
+            </div>
+            <div>
+               <h2 className="text-4xl font-display font-black text-white tracking-tighter">Revisar Pedido</h2>
+               <p className="text-sm text-brand-primary font-bold mt-1 uppercase tracking-[0.2em]">Caja • Mamma Mia!</p>
+            </div>
+        </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
             <div className="lg:col-span-8 space-y-6">
@@ -2647,7 +3059,19 @@ const Cart = () => {
                                         ))}
                                     </div>
                                 )}
-                                <input value={address} onChange={e => setAddress(e.target.value)} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-primary transition-colors" placeholder="Calle, Número, Piso..." />
+                                <AddressAutocomplete 
+                                    value={address} 
+                                    onChange={setAddress} 
+                                    onAddressSelect={(addr) => {
+                                        if (!addr.toLowerCase().includes('nules')) {
+                                            alert("Solo hacemos repartos a domicilio en la zona de Nules. Para otras localidades, selecciona 'Para Recoger'.");
+                                            setOrderType('RECOGIDA'); 
+                                        }
+                                        setAddress(addr);
+                                    }}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-primary transition-colors" 
+                                    placeholder="Calle, Número, Piso (Ej: Nules)..." 
+                                />
                             </div>
                         )}
                         {orderType === 'MESA' && (
@@ -2799,7 +3223,12 @@ const Kitchen = () => {
             <motion.div 
                 layout
                 initial={{ opacity: 0, x: -40, scale: 0.95 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
+                animate={{ 
+                    opacity: 1, 
+                    x: 0, 
+                    scale: order.status === 'PREPARANDO' ? [0.95, 1] : 1,
+                    filter: order.status === 'PREPARANDO' ? ['brightness(1.5)', 'brightness(1)'] : 'brightness(1)'
+                }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.4, type: "spring", bounce: 0.3 }}
                 key={order.id} 
@@ -2845,7 +3274,7 @@ const Kitchen = () => {
                    </button>
                ) : (
                    <button onClick={() => updateOrderStatus(order.id, 'LISTO')} className="w-full bg-brand-primary text-black py-5 md:py-4 rounded-xl font-black uppercase tracking-widest text-sm md:text-base hover:scale-[1.02] active:scale-95 transition-all shadow-xl mt-4">
-                      Marcar Listo
+                      {order.type === 'MESA' ? 'Enviar a Pedidos' : 'Enviar a Repartos'}
                    </button>
                )}
             </motion.div>
@@ -2867,6 +3296,7 @@ const Kitchen = () => {
     );
 };
 
+import { PushNotificationHistory } from './components/PushNotificationHistory';
 import { CustomerImporter } from './components/CustomerImporter';
 
 const StoreSettingsPage = () => {
@@ -2891,7 +3321,9 @@ const StoreSettingsPage = () => {
         openingHours: storeSettings.openingHours,
         deliveryZones: storeSettings.deliveryZones.join(', '),
         deliveryFee: storeSettings.deliveryFee,
-        contactPhone: storeSettings.contactPhone
+        contactPhone: storeSettings.contactPhone,
+        vapidKey: storeSettings.vapidKey || '',
+        vapidPrivateKey: storeSettings.vapidPrivateKey || ''
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -2906,7 +3338,9 @@ const StoreSettingsPage = () => {
             openingHours: formData.openingHours,
             deliveryZones: formData.deliveryZones.split(',').map(z => z.trim()).filter(Boolean),
             deliveryFee: formData.deliveryFee,
-            contactPhone: formData.contactPhone
+            contactPhone: formData.contactPhone,
+            vapidKey: formData.vapidKey,
+            vapidPrivateKey: formData.vapidPrivateKey
         });
         
         alert('Configuración guardada correctamente.');
@@ -2985,6 +3419,75 @@ const StoreSettingsPage = () => {
                             onChange={handleChange}
                             className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all shadow-inner"
                         />
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">
+                        Clave VAPID Pública (Para Notificaciones Push)
+                    </label>
+                    <input 
+                        type="text" 
+                        name="vapidKey"
+                        value={formData.vapidKey}
+                        onChange={handleChange}
+                        className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all shadow-inner mb-2"
+                        placeholder="B... (Clave VAPID pública)"
+                    />
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1 mt-4">
+                        Clave VAPID Privada
+                    </label>
+                    <input 
+                        type="password" 
+                        name="vapidPrivateKey"
+                        value={formData.vapidPrivateKey}
+                        onChange={handleChange}
+                        className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all shadow-inner"
+                        placeholder="... (Clave VAPID privada)"
+                    />
+                    <div className="flex gap-4 mt-4">
+                        <button 
+                            type="button" 
+                            onClick={async () => {
+                                try {
+                                    const res = await fetch('/api/push/generate-keys');
+                                    const keys = await res.json();
+                                    setFormData(f => ({ ...f, vapidKey: keys.publicKey, vapidPrivateKey: keys.privateKey }));
+                                    alert('Claves generadas, recuerda Guardar Ajustes.');
+                                } catch (e) {
+                                    alert('Error generando claves');
+                                }
+                            }}
+                            className="bg-zinc-800 text-white font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-xl hover:bg-zinc-700 transition"
+                        >
+                            Generar Nuevas Claves VAPID
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={async () => {
+                                if (!formData.vapidKey || !formData.vapidPrivateKey) {
+                                    alert('Debe guardar primero la clave VAPID pública y privada.');
+                                    return;
+                                }
+                                try {
+                                    const res = await fetch('/api/push/test', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ 
+                                            vapidKey: formData.vapidKey,
+                                            vapidPrivateKey: formData.vapidPrivateKey
+                                        })
+                                    });
+                                    const data = await res.json();
+                                    alert(`Prueba enviada: ${data.successCount} recibidas, ${data.failureCount} fallidas.`);
+                                } catch (e) {
+                                    alert('Error enviando prueba');
+                                }
+                            }}
+                            className="bg-brand-primary/20 border border-brand-primary/50 text-brand-primary font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-xl hover:bg-brand-primary/30 transition"
+                        >
+                            Enviar Notificación de Prueba a Todos
+                        </button>
                     </div>
                 </div>
 
@@ -3116,13 +3619,13 @@ const AnimatedRoutes = () => {
           <Route path="/cms" element={<PageWrapper><CMS /></PageWrapper>} />
           <Route path="/qr" element={<PageWrapper><QRCodes /></PageWrapper>} />
           <Route path="/settings" element={<PageWrapper><StoreSettingsPage /></PageWrapper>} />
-          <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
-          <Route path="/mesa/:tableNumber" element={<TableRedirect />} />
-          <Route path="/cliente" element={<PageWrapper><AppCliente /></PageWrapper>} />
-          <Route path="/tauleta" element={<PageWrapper><TauletaApp /></PageWrapper>} />
-          <Route path="/admin" element={<PageWrapper><AdminApp /></PageWrapper>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Route>
+        <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
+        <Route path="/mesa/:tableNumber" element={<TableRedirect />} />
+        <Route path="/cliente" element={<PageWrapper><AppCliente /></PageWrapper>} />
+        <Route path="/tauleta" element={<PageWrapper><TauletaApp /></PageWrapper>} />
+        <Route path="/admin" element={<PageWrapper><AdminApp /></PageWrapper>} />
       </Routes>
     </AnimatePresence>
   );
@@ -3137,6 +3640,16 @@ const AppContent = () => {
 };
 
 export default function App() {
+  if (!hasValidKey) {
+    return (
+      <AuthProvider>
+        <StoreProvider>
+          <AppContent />
+        </StoreProvider>
+      </AuthProvider>
+    );
+  }
+
   return (
     <APIProvider apiKey={API_KEY} version="weekly">
       <AuthProvider>

@@ -1,48 +1,89 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { ShoppingCart, Mic, Send, ChefHat, MapPin, ChevronRight, Plus, Minus } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ShoppingCart, Mic, Send, ChefHat, MapPin, ChevronRight, Plus, Minus, Sparkles, Loader2, Check, AlertCircle, CheckCircle } from 'lucide-react';
 import { dbService } from '../db/DatabaseService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useStore } from '../context/StoreContext';
+import { PizzaTracker } from '../components/PizzaTracker';
+import { NotificationManager } from '../components/NotificationManager';
 
 export const AppCliente = () => {
+    const { orders, addOrder } = useStore();
     const [products, setProducts] = useState<any[]>([]);
-    const [cart, setCart] = useState<{product: any, qty: number}[]>([]);
+    const [categories, setCategories] = useState<string[]>([]);
+    const [cart, setCart] = useState<{product: any, qty: number, notes?: string}[]>([]);
     const [orderText, setOrderText] = useState('');
     const [isCartOpen, setIsCartOpen] = useState(false);
-    const { user } = useAuth();
+    const [isAILoading, setIsAILoading] = useState(false);
+    const [aiResponse, setAiResponse] = useState<{ reply: string, parsedItems: any[] } | null>(null);
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    
+    const { user, login } = useAuth();
     const navigate = useNavigate();
+
+    // Check for an active order to show the tracker
+    const activeOrder = useMemo(() => {
+        if (!user) return null;
+        // Find most recent order by this user that is NOT completed
+        const active = orders.find(o => o.phone === user.phone && o.status !== 'COMPLETADO');
+        return active;
+    }, [orders, user]);
+
+    // Box Customization
+    const [boxCustomizing, setBoxCustomizing] = useState<any>(null);
+    const [boxPizza, setBoxPizza] = useState<string>('');
+    const [boxSide, setBoxSide] = useState<string>('Patatas');
+    const [boxDrink, setBoxDrink] = useState<string>('');
+    const [boxSnack, setBoxSnack] = useState<string>('');
+    
+    const handleAddBox = () => {
+        if (!boxPizza || !boxSide || !boxDrink || !boxSnack) {
+            alert('Por favor selecciona todas las opciones del menú The Box.');
+            return;
+        }
+        const extraPrice = boxSide === 'Ensalada' ? 2 : 0;
+        const notes = `The Box: Pizza ${boxPizza}, ${boxSide}, Bebida: ${boxDrink}, Aperitivo: ${boxSnack}`;
+        addToCart(boxCustomizing, notes, extraPrice);
+        setBoxCustomizing(null);
+        setBoxPizza('');
+        setBoxSide('Patatas');
+        setBoxDrink('');
+        setBoxSnack('');
+    };
 
     useEffect(() => {
         const fetchProducts = async () => {
-            const categories = await dbService.getCategories();
+            const fetchedCategories = await dbService.getCategories();
             const prods = await dbService.getProducts();
-            // simple merge for now
-            setProducts(prods);
+            setCategories(fetchedCategories.map((c: any) => c.name));
+            setProducts(prods.map((p: any) => ({...p, category: p.category_name, image: p.image_url})));
         };
         fetchProducts();
         
         const unsubscribe = dbService.subscribe(fetchProducts);
-        return () => unsubscribe();
+        return () => { unsubscribe(); };
     }, []);
 
-    const addToCart = (product: any) => {
+    const addToCart = (product: any, notes?: string, customPriceOffset: number = 0) => {
         setCart(prev => {
-            const existing = prev.find(p => p.product.id === product.id);
+            const existing = prev.find(p => p.product.id === product.id && p.notes === notes);
             if (existing) {
-                return prev.map(p => p.product.id === product.id ? {...p, qty: p.qty + 1} : p);
+                return prev.map(p => (p.product.id === product.id && p.notes === notes) ? {...p, qty: p.qty + 1} : p);
             }
-            return [...prev, {product, qty: 1}];
+            const actualProduct = customPriceOffset ? { ...product, price: product.price + customPriceOffset } : product;
+            return [...prev, {product: actualProduct, qty: 1, notes}];
         });
     };
 
-    const removeFromCart = (productId: string) => {
+    const removeFromCart = (productId: string, notes?: string) => {
         setCart(prev => {
-            const existing = prev.find(p => p.product.id === productId);
+            const existing = prev.find(p => p.product.id === productId && p.notes === notes);
             if (existing && existing.qty > 1) {
-                return prev.map(p => p.product.id === productId ? {...p, qty: p.qty - 1} : p);
+                return prev.map(p => (p.product.id === productId && p.notes === notes) ? {...p, qty: p.qty - 1} : p);
             }
-            return prev.filter(p => p.product.id !== productId);
+            return prev.filter(p => !(p.product.id === productId && p.notes === notes));
         });
     };
 
@@ -56,109 +97,333 @@ export const AppCliente = () => {
         }
         if (cart.length === 0) return;
 
-        const items = cart.map(item => ({
-            productId: item.product.id,
-            qty: item.qty
-        }));
+        const itemsStringList = cart.map(item => {
+            if (item.notes) return item.notes;
+            const qtyS = item.qty > 1 ? `${item.qty}x ` : '';
+            return `${qtyS}${item.product.name}`;
+        });
+
+        // Add order via Zustand (Firebase synched)
+        addOrder({
+            id: Date.now().toString(),
+            customer: user.name || 'Cliente Online',
+            phone: user.phone,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            date: new Date().toISOString().split('T')[0],
+            createdAt: Date.now(),
+            items: itemsStringList,
+            status: 'PENDIENTE',
+            type: 'MESA', // Note: En la app cliente se asume mesa por defecto a menos que se cambie
+            total: cartTotal,
+        });
         
-        await dbService.createComplexOrder(user.name || 'Cliente Online', user.phone, items);
         setCart([]);
         setIsCartOpen(false);
-        alert('¡Pedido realizado con éxito!');
+        setSuccessMessage('¡Pedido realizado con éxito! Enviado directamente a la cocina de Mamma Mia.');
+        setIsSuccessModalOpen(true);
     };
 
-    const handleAIAssist = () => {
+    const matchProductByName = (parsedName: string) => {
+        return products.find(p => 
+            p.name.toLowerCase().includes(parsedName.toLowerCase()) ||
+            parsedName.toLowerCase().includes(p.name.toLowerCase())
+        );
+    };
+
+    const handleAIAssist = async () => {
         if (!orderText.trim()) return;
-        alert(`Simulación AI: Procesando tu pedido dictado -> "${orderText}"`);
-        setOrderText('');
-    }
+        setIsAILoading(true);
+        setAiResponse(null);
+        try {
+            const menuData = products.map(p => ({
+                id: p.id,
+                name: p.name,
+                price: p.price,
+                description: p.description
+            }));
+
+            const response = await fetch('/api/gemini/recommend', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    preferences: orderText,
+                    menuData: menuData
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('La IA no pudo procesar tu pedido.');
+            }
+
+            const data = await response.json();
+            
+            // Collect all items parsed by Gemini
+            const allItems: any[] = [];
+            if (data.order) {
+                if (Array.isArray(data.order.pizzas)) allItems.push(...data.order.pizzas);
+                if (Array.isArray(data.order.bebidas)) allItems.push(...data.order.bebidas);
+                if (Array.isArray(data.order.otros)) allItems.push(...data.order.otros);
+            }
+
+            setAiResponse({
+                reply: data.reply || 'He procesado tu pedido.',
+                parsedItems: allItems
+            });
+            setOrderText('');
+        } catch (error) {
+            console.error(error);
+            setAiResponse({
+                reply: 'El Chef de Mamma Mia está un poco ocupado ahora mismo. Intenta pedir manualmente o escríbeme en unos instantes.',
+                parsedItems: []
+            });
+        } finally {
+            setIsAILoading(false);
+        }
+    };
+
+    const addAiItemsToCart = () => {
+        if (!aiResponse) return;
+        
+        setCart(prev => {
+            let nextCart = [...prev];
+            aiResponse.parsedItems.forEach(item => {
+                const product = matchProductByName(item.name);
+                if (product) {
+                    const existingIdx = nextCart.findIndex(p => p.product.id === product.id);
+                    const qtyToAdd = Number(item.qty) || 1;
+                    if (existingIdx > -1) {
+                        nextCart[existingIdx] = {
+                            ...nextCart[existingIdx],
+                            qty: nextCart[existingIdx].qty + qtyToAdd
+                        };
+                    } else {
+                        nextCart.push({ product, qty: qtyToAdd });
+                    }
+                }
+            });
+            return nextCart;
+        });
+
+        setSuccessMessage('¡Genial! Los productos sugeridos por la IA se han añadido a tu carrito correctamente.');
+        setIsSuccessModalOpen(true);
+        setAiResponse(null);
+    };
 
     return (
-        <div className="min-h-screen bg-surface-base text-white font-sans max-w-md mx-auto relative overflow-hidden pb-24 shadow-2xl safe-area-pt">
-            {/* Header */}
+        <div className="min-h-screen w-full bg-gradient-to-br from-[#1c0a06] via-surface-base to-black flex items-center justify-center py-0 sm:py-8 px-0 sm:px-4 overflow-hidden relative">
+            {/* Background design ornaments for desktop */}
+            <div className="absolute top-[-10%] right-[-10%] w-[40rem] h-[40rem] rounded-full bg-brand-primary/5 blur-[120px] pointer-events-none hidden md:block" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[35rem] h-[35rem] rounded-full bg-brand-red/5 blur-[120px] pointer-events-none hidden md:block" />
+
+            {/* Side info panel on desktop/large screens */}
+            <div className="hidden lg:flex fixed left-10 xl:left-24 top-1/2 -translate-y-1/2 flex-col max-w-xs xl:max-w-sm z-10">
+                <span className="text-brand-primary font-black uppercase tracking-[0.3em] text-xs">La Nostra Pizza</span>
+                <h1 className="text-5xl xl:text-7xl font-display font-black text-white leading-none mt-2 mb-6">Mamma Mia!</h1>
+                <p className="text-gray-400 font-bold text-sm leading-relaxed">
+                    Pide cómodamente desde tu mesa, consulta al Chef Inteligente con IA o haz tu pedido para recoger. ¡Y no olvides usar tu cupón del 10%!
+                </p>
+                <div className="flex gap-4 items-center mt-8 bg-surface-container border border-white/5 p-4 rounded-3xl">
+                    <div className="w-12 h-12 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary font-black text-2xl border border-brand-primary/20">
+                        %
+                    </div>
+                    <div>
+                        <p className="text-white font-bold text-sm">10% Descuento</p>
+                        <p className="text-xs text-gray-400 font-semibold mt-0.5">Automático en tu primer pedido</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Floating Mobile App Mockup Frame */}
+            <div className="w-full max-w-md min-h-screen sm:min-h-[800px] sm:h-[90vh] bg-surface-base text-white font-sans sm:rounded-[2.5rem] relative overflow-y-auto flex flex-col sm:shadow-[0_24px_80px_rgba(0,0,0,0.8)] border-0 sm:border sm:border-white/10 safe-area-pt custom-scrollbar pb-24 shadow-2xl">
+                {/* Header */}
             <header className="px-6 top-0 sticky bg-surface-base/80 backdrop-blur-xl z-30 pt-8 pb-4 flex justify-between items-center border-b border-white/5">
                 <div>
-                    <h1 className="text-2xl font-display font-black text-brand-primary tracking-tight flex items-center gap-2">
+                     <h1 className="text-2xl font-display font-black text-brand-primary tracking-tight flex items-center gap-2">
                         <ChefHat size={24} /> Mamma Mia
-                    </h1>
-                    <p className="text-xs text-gray-400 font-medium flex items-center gap-1 mt-1">
+                     </h1>
+                     <p className="text-xs text-gray-400 font-medium flex items-center gap-1 mt-1">
                         <MapPin size={12} className="text-brand-red"/> Nules, Castelló
-                    </p>
+                     </p>
                 </div>
-                <button 
-                    onClick={() => setIsCartOpen(true)}
-                    className="relative bg-surface-container w-12 h-12 rounded-full flex items-center justify-center border border-white/10 active:scale-95 transition-transform"
-                >
-                    <ShoppingCart size={20} className="text-white"/>
-                    {cartItemsCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-brand-red text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                            {cartItemsCount}
-                        </span>
-                    )}
-                </button>
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => navigate('/')}
+                        className="text-xs font-bold text-gray-400 hover:text-white bg-surface-container border border-white/10 hover:bg-white/5 px-3 py-1.5 rounded-xl transition-colors shrink-0"
+                        title="Volver"
+                    >
+                        Salir
+                    </button>
+                    <button 
+                        onClick={() => setIsCartOpen(true)}
+                        className="relative bg-surface-container w-12 h-12 rounded-full flex items-center justify-center border border-white/10 active:scale-95 transition-transform"
+                    >
+                        <ShoppingCart size={20} className="text-white"/>
+                        {cartItemsCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-brand-red text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                                {cartItemsCount}
+                            </span>
+                        )}
+                    </button>
+                </div>
             </header>
+
+            {/* Active Order Tracker */}
+            {activeOrder && (
+                <div className="px-6 mt-6 mb-2">
+                    <PizzaTracker orderId={activeOrder.id} />
+                </div>
+            )}
 
             {/* AI Ordering Area */}
             <div className="px-6 mt-6 mb-8">
-                <div className="bg-brand-blue/10 border border-brand-blue/20 rounded-3xl p-5 shadow-[0_0_30px_rgba(34,107,172,0.1)]">
+                <div className="bg-gradient-to-r from-brand-blue/10 to-purple-500/10 border border-brand-blue/20 rounded-3xl p-5 shadow-[0_0_30px_rgba(34,107,172,0.1)]">
                     <h2 className="text-sm font-bold text-brand-light-blue mb-3 uppercase tracking-wider flex items-center gap-2">
-                        <Mic size={16} /> Pedido por Voz / Texto
+                        <Sparkles size={16} className="text-brand-yellow animate-pulse" /> Chef Inteligente IA
                     </h2>
                     <div className="flex gap-2">
                         <input 
                             type="text" 
                             className="flex-1 bg-black/50 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue transition-colors"
-                            placeholder="Ej: Quiero una margarita y dos colas..."
+                            placeholder="Ej: Quiero una margarita sin cebolla..."
                             value={orderText}
                             onChange={(e) => setOrderText(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAIAssist()}
+                            disabled={isAILoading}
                         />
                         <button 
                             onClick={handleAIAssist}
-                            className="bg-brand-blue text-white p-3 rounded-2xl hover:bg-brand-light-blue transition-colors active:scale-95 flex items-center justify-center"
+                            disabled={isAILoading}
+                            className="bg-brand-blue hover:bg-brand-light-blue text-white p-3 rounded-2xl transition-colors active:scale-95 flex items-center justify-center disabled:opacity-50"
                         >
-                            <Send size={18} />
+                            {isAILoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                         </button>
                     </div>
-                </div>
-            </div>
 
+                    {/* AI Loading State */}
+                    {isAILoading && (
+                        <div className="mt-4 flex items-center gap-2.5 text-xs text-brand-light-blue bg-brand-blue/5 border border-brand-blue/10 p-3 rounded-xl">
+                            <Loader2 size={14} className="animate-spin" />
+                            <span className="font-semibold">El Chef de Mamma Mia está procesando tu pedido gastronómico...</span>
+                        </div>
+                    )}
+
+                    {/* AI Response Block */}
+                    {aiResponse && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-4 bg-surface-bright/85 border border-white/5 rounded-2xl p-4 space-y-3 shadow-lg"
+                        >
+                            <div className="flex items-start gap-2">
+                                <span className="bg-brand-primary text-black p-1.5 rounded-lg text-xs mt-0.5">🤖</span>
+                                <p className="text-xs font-bold text-gray-200 leading-relaxed leading-normal">{aiResponse.reply}</p>
+                            </div>
+
+                            {aiResponse.parsedItems.length > 0 && (
+                                <div className="pt-2 border-t border-white/5">
+                                    <p className="text-[10px] uppercase text-gray-400 font-bold mb-2">Ingredientes identificados en la carta:</p>
+                                    <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
+                                        {aiResponse.parsedItems.map((item, idx) => {
+                                            const match = matchProductByName(item.name);
+                                            return (
+                                                <div key={idx} className="flex justify-between items-center bg-black/30 px-3 py-1.5 rounded-lg border border-white/5">
+                                                    <div className="flex items-center gap-2 truncate">
+                                                        {match ? (
+                                                            <Check size={12} className="text-green-500 shrink-0" />
+                                                        ) : (
+                                                            <AlertCircle size={12} className="text-brand-yellow shrink-0" />
+                                                        )}
+                                                        <span className="text-xs text-white truncate font-medium">
+                                                            {item.qty}x {match ? match.name : item.name}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[10px] text-gray-500 shrink-0 font-bold">
+                                                        {match ? `€${(match.price * (item.qty || 1)).toFixed(2)}` : 'No encontrado'}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    
+                                    {aiResponse.parsedItems.some(i => matchProductByName(i.name)) && (
+                                        <button 
+                                            onClick={addAiItemsToCart}
+                                            className="w-full mt-3 bg-brand-primary text-black text-xs font-black py-2.5 rounded-xl flex items-center justify-center gap-1 hover:bg-brand-yellow transition-all active:scale-95"
+                                        >
+                                            <Sparkles size={12} /> Añadir estos artículos al carrito
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+                </div>
             {/* Menu Layout */}
             <div className="px-6 space-y-8">
-                <div>
-                    <h3 className="text-2xl font-black mb-4">Nuestra Carta</h3>
-                    <div className="space-y-4">
-                        {products.map(product => (
-                            <motion.div 
-                                key={product.id}
-                                className="bg-surface-container rounded-3xl p-4 flex gap-4 border border-white/5 shadow-lg relative overflow-hidden"
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                <div className="w-24 h-24 bg-surface-bright rounded-2xl flex-shrink-0 flex items-center justify-center border border-white/5 overflow-hidden">
-                                     {product.image_url ? (
-                                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-                                     ) : (
-                                        <ChefHat size={32} className="text-gray-600 opacity-50"/>
-                                     )}
-                                </div>
-                                <div className="flex-1 flex flex-col justify-between py-1">
-                                    <div>
-                                        <h4 className="font-bold text-white leading-tight">{product.name}</h4>
-                                        <p className="text-xs text-gray-400 mt-1 line-clamp-2">{product.description || 'Delicioso producto artesanal'}</p>
-                                    </div>
-                                    <div className="flex justify-between items-center mt-2">
-                                        <span className="font-black text-brand-primary">€{Number(product.price).toFixed(2)}</span>
-                                        <button 
-                                            onClick={() => addToCart(product)}
-                                            className="bg-white/10 hover:bg-brand-primary text-white hover:text-black w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-                                        >
-                                            <Plus size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
+                {categories.map(category => {
+                    const categoryProducts = products.filter(p => p.category === category);
+                    if (categoryProducts.length === 0) return null;
+                    return (
+                    <div key={category} className="mb-8">
+                        <h3 className="text-xl font-display font-black mb-5 tracking-tight text-white flex items-center gap-2">
+                            <span className="w-1.5 h-6 bg-brand-primary rounded-full"></span>
+                            {category}
+                        </h3>
+                        <div className="space-y-4">
+                            {categoryProducts.map(product => {
+                                const isPopular = product.isPopular || product.tags?.includes('popular') || product.tags?.includes('premium');
+                                const itemImage = product.image || product.image_url;
+                                
+                                return (
+                                    <motion.div 
+                                        key={product.id}
+                                        className="bg-surface-container/60 hover:bg-surface-container/90 backdrop-blur-md rounded-3xl p-4 flex gap-4 border border-white/5 hover:border-white/10 shadow-lg relative overflow-hidden transition-colors"
+                                        whileTap={{ scale: 0.98 }}
+                                    >
+                                        {isPopular && (
+                                            <div className="absolute top-0 right-0 bg-gradient-to-l from-brand-primary/20 to-transparent text-[10px] font-black text-brand-primary px-3 py-1 bg-black/40 rounded-bl-xl border-l border-b border-white/5 uppercase tracking-widest">
+                                                Premium 🔥
+                                            </div>
+                                        )}
+                                        <div className="w-24 h-24 bg-black/35 rounded-2xl flex-shrink-0 flex items-center justify-center border border-white/5 overflow-hidden relative shadow-inner">
+                                             {itemImage ? (
+                                                <img src={itemImage} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                             ) : (
+                                                <ChefHat size={32} className="text-gray-600 opacity-40"/>
+                                             )}
+                                        </div>
+                                        <div className="flex-1 flex flex-col justify-between py-1">
+                                            <div>
+                                                <h4 className="font-bold text-white text-sm leading-tight tracking-tight pr-14">{product.name}</h4>
+                                                <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed font-medium">{product.description || 'Delicioso producto elaborado de forma puramente artesanal con ingredientes frescos locales.'}</p>
+                                            </div>
+                                            <div className="flex justify-between items-center mt-3">
+                                                <span className="font-black text-brand-primary font-mono text-sm">€{Number(product.price).toFixed(2)}</span>
+                                                <button 
+                                                    onClick={() => {
+                                                        if (product.id === 'box1' || product.name.toLowerCase().includes('box')) {
+                                                            setBoxCustomizing(product);
+                                                        } else {
+                                                            addToCart(product);
+                                                        }
+                                                    }}
+                                                    className="bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-black w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-90 border border-brand-primary/25 cursor-pointer"
+                                                    title="Añadir al Carrito"
+                                                >
+                                                    <Plus size={16} strokeWidth={3} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
+                    );
+                })}
+            </div>
             </div>
 
             {/* Floating Cart Modal / Bottom Sheet */}
@@ -184,11 +449,11 @@ export const AppCliente = () => {
                                             <span className="text-brand-primary font-bold text-sm">€{Number(item.product.price).toFixed(2)}</span>
                                         </div>
                                         <div className="flex items-center gap-3 bg-surface-bright rounded-full px-2 py-1 border border-white/5">
-                                            <button onClick={() => removeFromCart(item.product.id)} className="w-8 h-8 flex items-center justify-center rounded-full active:bg-white/10 text-gray-400 hover:text-white">
+                                            <button onClick={() => removeFromCart(item.product.id, item.notes)} className="w-8 h-8 flex items-center justify-center rounded-full active:bg-white/10 text-gray-400 hover:text-white">
                                                 <Minus size={14} />
                                             </button>
                                             <span className="font-bold w-4 text-center">{item.qty}</span>
-                                            <button onClick={() => addToCart(item.product)} className="w-8 h-8 flex items-center justify-center rounded-full active:bg-white/10 text-gray-400 hover:text-white">
+                                            <button onClick={() => addToCart(item.product, item.notes)} className="w-8 h-8 flex items-center justify-center rounded-full active:bg-white/10 text-gray-400 hover:text-white">
                                                 <Plus size={14} />
                                             </button>
                                         </div>
@@ -213,6 +478,112 @@ export const AppCliente = () => {
                     </motion.div>
                 </div>
             )}
+
+            {/* In-app custom success modal */}
+            <AnimatePresence>
+                {isSuccessModalOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="bg-surface-container border border-white/10 p-6 rounded-[2rem] max-w-xs w-full shadow-2xl relative text-center flex flex-col items-center"
+                        >
+                            <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 mb-4 border border-green-500/20">
+                                <CheckCircle size={32} />
+                            </div>
+                            <h3 className="text-xl font-black mb-2 text-white tracking-tight">¡Hecho!</h3>
+                            <p className="text-gray-400 text-xs mb-6 leading-relaxed">{successMessage}</p>
+                            <button 
+                                onClick={() => setIsSuccessModalOpen(false)} 
+                                className="w-full py-3 rounded-xl font-black text-sm bg-brand-primary text-black hover:bg-brand-yellow transition-colors active:scale-95"
+                            >
+                                Entendido
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* The Box Customization Modal */}
+            <AnimatePresence>
+                {boxCustomizing && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="bg-surface-container border border-white/10 p-6 rounded-[2rem] max-w-sm w-full shadow-2xl relative flex flex-col"
+                        >
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-black text-white">Configura tu Box</h3>
+                                <button onClick={() => setBoxCustomizing(null)} className="text-gray-400 hover:text-white"><CheckCircle className="rotate-45" /></button>
+                            </div>
+                            
+                            <div className="space-y-4 mb-6 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
+                                <div>
+                                    <label className="text-xs text-gray-400 font-bold uppercase mb-1 block">Elige tu Pizza</label>
+                                    <select value={boxPizza} onChange={e => setBoxPizza(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-brand-primary">
+                                        <option value="">Selecciona Pizza...</option>
+                                        {products.filter(p => p.category === 'Pizzas').map(p => (
+                                            <option key={p.id} value={p.name}>{p.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label className="text-xs text-gray-400 font-bold uppercase mb-1 block">Acompañamiento</label>
+                                    <select value={boxSide} onChange={e => setBoxSide(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-brand-primary">
+                                        <option value="Patatas">Patatas</option>
+                                        <option value="Ensalada">Ensalada (+€2.00)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs text-gray-400 font-bold uppercase mb-1 block">Bebida</label>
+                                    <select value={boxDrink} onChange={e => setBoxDrink(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-brand-primary">
+                                        <option value="">Selecciona Bebida...</option>
+                                        {products.filter(p => p.category === 'Bebidas').map(p => (
+                                            <option key={p.id} value={p.name}>{p.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs text-gray-400 font-bold uppercase mb-1 block">Media Ración de Aperitivo</label>
+                                    <select value={boxSnack} onChange={e => setBoxSnack(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-brand-primary">
+                                        <option value="">Selecciona Aperitivo...</option>
+                                        {products.filter(p => p.category === 'Aperitivos').map(p => (
+                                            <option key={p.id} value={p.name}>{p.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <button 
+                                onClick={handleAddBox} 
+                                disabled={!boxPizza || !boxDrink || !boxSnack}
+                                className="w-full py-4 rounded-xl font-black text-sm bg-brand-primary text-black disabled:opacity-50 transition-colors hover:bg-brand-yellow active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <Plus size={18} /> Añadir al Carrito
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <NotificationManager />
         </div>
+    </div>
     );
 };

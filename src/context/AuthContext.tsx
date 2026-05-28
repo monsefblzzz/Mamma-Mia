@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { detectZone } from '../data/customerParser';
+import { detectZone, parseRawCustomers } from '../data/customerParser';
 
 export type Role = 'CLIENTE' | 'CAMARERO' | 'COCINA' | 'REPARTIDOR' | 'ENCARGADO' | 'JEFE';
 
@@ -86,12 +86,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Optionally load some predefined clients if needed here
   useEffect(() => {
       if (!isInitialized) return;
-      import('../data/customerParser').then(mod => {
-          const batch = mod.parseRawCustomers();
+      try {
+          const batch = parseRawCustomers();
           if (batch.length > 0) {
               setUsers(prev => {
-                  const existingPhones = new Set(prev.map(u => u.phone));
-                  const toAdd = batch.filter(b => !existingPhones.has(b.phone));
+                  const existingPhones = new Set(prev.map((u: any) => u.phone));
+                  const toAdd = batch.filter((b: any) => !existingPhones.has(b.phone));
                   
                   if (toAdd.length > 0) {
                     fetch('/api/users/batch', {
@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   return [...prev, ...toAdd];
               });
           }
-      }).catch(() => {});
+      } catch (err) {}
   }, [isInitialized]);
 
   const role = simulatorRole || user?.role || 'CLIENTE';

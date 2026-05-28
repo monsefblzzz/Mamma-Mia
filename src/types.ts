@@ -27,6 +27,7 @@ export interface InventoryItem {
   unit: string;
   minLevel: number;
   status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+  image?: string;
 }
 
 export interface CartItem {
@@ -56,6 +57,8 @@ export interface StoreSettings {
   deliveryZones: string[];
   deliveryFee: number;
   contactPhone: string;
+  vapidKey?: string;
+  vapidPrivateKey?: string;
 }
 
 export const INITIAL_STORE_SETTINGS: StoreSettings = {
@@ -63,6 +66,8 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
   deliveryZones: ['Centro', 'Norte', 'Sur'],
   deliveryFee: 2.50,
   contactPhone: '+34 600 000 000',
+  vapidKey: '',
+  vapidPrivateKey: '',
 };
 
 export const MENU_ITEMS: MenuItem[] = [
@@ -71,7 +76,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { id: 'p2', name: 'Carbonara', description: 'Nata, mozzarella, bacon, huevo y parmesano', price: 11.50, category: 'Pizzas', rating: 4.5, ratingCount: 89, isPopular: true },
   { id: 'p3', name: 'Búfalo', description: 'Tomate, mozzarella, carne picada, cebolla, pimiento rojo y salsa búfalo', price: 12.00, category: 'Pizzas', rating: 4.9, ratingCount: 201 },
   { id: 'p4', name: 'Colorado', description: 'Tomate, mozzarella, ternera, bacon, pimiento rojo', price: 12.50, category: 'Pizzas' },
-  { id: 'p5', name: 'Cañada', description: 'Tomate, mozzarella, bacon, pollo, cebolla y mostaza', price: 12.00, category: 'Pizzas' },
+  { id: 'p5', name: 'Canadá', description: 'Tomate, mozzarella, bacon, pollo, cebolla y mostaza', price: 12.00, category: 'Pizzas' },
   { id: 'p6', name: 'Manchega', description: 'Tomate, orégano, ajo, pimentón y queso manchego curado', price: 9.50, category: 'Pizzas' },
   { id: 'p7', name: 'Todolella', description: 'Tomate, tomate rodaja, mozzarella, jamón serrano, roquefort y olivas', price: 11.50, category: 'Pizzas' },
   { id: 'p8', name: 'Suprema Queso', description: 'Tomate, mozzarella, queso de cabra, cheddar, emmental, orégano', price: 12.00, category: 'Pizzas' },
@@ -115,6 +120,8 @@ export const MENU_ITEMS: MenuItem[] = [
   { id: 'h3', name: 'Xtrem', description: 'Hamburguesa ternera (100g), queso, bacon, cebolla, huevo, tomate y brotes tiernos', price: 10.50, category: 'Hamburguesas' },
   { id: 'h4', name: 'Basic', description: 'Hamburguesa ternera, queso, tomate y brotes tiernos', price: 8.90, category: 'Hamburguesas' },
   { id: 'h5', name: 'Deliciosa', description: 'Delicia de pollo, bacon, tomate, mayonesa y brotes tiernos', price: 9.50, category: 'Hamburguesas' },
+  { id: 'h_deltoya', name: 'Deltoya', description: 'Donut de Pollo, Salsa De Queso, Salsa Mojo Picon, Triangulos Doritos, Torreznos y Brotes Tiernos', price: 13.90, category: 'Hamburguesas', isPopular: true },
+  { id: 'h_black_bull', name: 'Black Bull', description: 'Toro de Lidia BBQ, Queso, Salsa Baconesa, Salsa Mayo Sriracha y Brotes Tiernos', price: 14.95, category: 'Hamburguesas', isPopular: true },
 
   // BOCADILLOS
   { id: 'b1', name: 'Paté', description: 'Paté, queso tomate y brotes tiernos', price: 8.00, category: 'Bocadillos' },
@@ -130,6 +137,8 @@ export const MENU_ITEMS: MenuItem[] = [
   { id: 'a5', name: 'Croquetón Jamón', description: '3 unidades', price: 6.00, category: 'Aperitivos' },
   { id: 'a6', name: 'Combo', description: '2 Nuggets, 2 croquetas queso, 1 croquetón jamón, 6 bolas patata', price: 7.00, category: 'Aperitivos' },
   { id: 'a7', name: 'Maxi Combo', description: '4 Nuggets, 4 croquetas queso, 2 croquetón jamón, 12 bolas patata', price: 13.00, category: 'Aperitivos' },
+  { id: 'aros_cebolla_5_picantes', name: 'Aros de Cebolla (5 picantes)', description: '5 unidades de aros de cebolla con un toque crujiente y picante', price: 4.50, category: 'Aperitivos' },
+  { id: 'aros_cebolla_7_normales', name: 'Aros de Cebolla (7 normales)', description: '7 unidades de crujientes y deliciosos aros de cebolla tradicionales', price: 5.00, category: 'Aperitivos' },
 
   // PATATAS FRITAS
   { id: 'pf1', name: 'Normales', description: 'Patatas fritas clásicas', price: 4.00, category: 'Patatas Fritas' },
@@ -145,7 +154,45 @@ export const MENU_ITEMS: MenuItem[] = [
   { id: 'e2', name: 'Ensalada Frutos Secos', description: 'Brotes tiernos, frutos secos, queso y aceite balsámico', price: 9.00, category: 'Ensaladas' },
 
   // MENÚ THE BOX
-  { id: 'box1', name: 'Menú "The Box"', description: 'Pizza + Patatas + Aperitivo 1/2 Ración + Bebida', price: 13.50, category: 'Menús Especiales' }
+  { id: 'box1', name: 'Menú "The Box"', description: 'Pizza + Patatas + Aperitivo 1/2 Ración + Bebida', price: 13.50, category: 'Menús Especiales' },
+
+  // BEBIDAS
+  { id: 'c_cola_lata', name: 'Coca-Cola (Lata)', description: 'Lata de Coca-Cola original de 33cl', price: 2.00, category: 'Bebidas' },
+  { id: 'c_cola_zero_lata', name: 'Coca-Cola Zero (Lata)', description: 'Lata de Coca-Cola Zero de 33cl', price: 2.00, category: 'Bebidas' },
+  { id: 'fanta_nar_lata', name: 'Fanta Naranja (Lata)', description: 'Lata de Fanta Naranja de 33cl', price: 2.00, category: 'Bebidas' },
+  { id: 'fanta_lim_lata', name: 'Fanta Limón (Lata)', description: 'Lata de Fanta Limón de 33cl', price: 2.00, category: 'Bebidas' },
+  { id: 'sprite_lata', name: 'Sprite (Lata)', description: 'Lata de Sprite de 33cl', price: 2.00, category: 'Bebidas' },
+  { id: 'aquarius_n', name: 'Aquarius Naranja', description: 'Refresco isotónico sabor naranja', price: 2.20, category: 'Bebidas' },
+  { id: 'aquarius_l', name: 'Aquarius Limón', description: 'Refresco isotónico sabor limón', price: 2.20, category: 'Bebidas' },
+  { id: 'cerveza', name: 'Cerveza (Lata)', description: 'Cerveza en lata de 33cl', price: 2.00, category: 'Bebidas' },
+  { id: 'agua_peq', name: 'Agua Pequeña', description: 'Botella de agua de 500ml', price: 1.50, category: 'Bebidas' },
+  { id: 'agua_grd', name: 'Agua Grande', description: 'Botella de agua de 1.5L', price: 2.50, category: 'Bebidas' },
+  { id: 'litrona', name: 'Litrona de Cerveza', description: 'Botella familiar de cerveza de un litro', price: 3.50, category: 'Bebidas' },
+  { id: 'vino_copas', name: 'Copa de Vino', description: 'Copa de vino de la casa', price: 2.50, category: 'Bebidas' },
+  { id: 'cafes', name: 'Café', description: 'Taza de café recién hecho del día', price: 1.20, category: 'Bebidas' },
+  { id: 'carajillo', name: 'Carajillo (Solo Mesa)', description: 'Café con licor quemado. Solo disponible para pedidos en mesa.', price: 2.00, category: 'Bebidas', tags: ['Solo Mesa'] },
+  { id: 'cola_grande', name: 'Cola Grande (1L)', description: 'Botella de refresco de cola grande', price: 3.00, category: 'Bebidas' },
+
+  // POSTRES
+  { id: 'pistamisu', name: 'Pistamisu', description: 'Tiramisú de pistacho suave, cremoso y casero', price: 6.50, category: 'Postres', tags: ['Novedad'] },
+  { id: 'cheescake_pantera_rosa', name: 'Cheesecake Pantera Rosa', description: 'Tarta de queso horneada con el nostálgico sabor de cobertura Pantera Rosa', price: 6.50, category: 'Postres', tags: ['Especial'] },
+  { id: 'panacota_turron', name: 'Panacota de Turrón con Petazetas', description: 'Suave panna cotta de turrón tradicional que chispea en el paladar con petazetas', price: 6.00, category: 'Postres' },
+  { id: 'bj_spectacu_love', name: "Spectacu-love (Ben & Jerry's)", description: "Helado de nata con crujientes tropezones de galleta caramelizada y finos remolinos de galleta caramelizada con canela", price: 7.50, category: 'Postres' },
+  { id: 'bj_marshmallow', name: "Marshmallow & S'more (Ben & Jerry's)", description: "Helado de chocolate con tropezones de Cookie Dough al cacao y remolinos de nubes, cubierto de helado de nata y chips de chocolate", price: 7.90, category: 'Postres' },
+  { id: 'bj_dulce', name: "Dulce-De-Lish (Ben & Jerry's)", description: "Helado de caramelo salado con trozos y remolinos de caramelo, cubierto de trozos de chocolate con sal marina", price: 7.90, category: 'Postres' },
+  { id: 'bj_vermont_ster', name: "Cookie Vermont-ster (Ben & Jerry's)", description: "Helado de nata con cookies de chocolate y salsa de galleta al cacao", price: 7.90, category: 'Postres' },
+  { id: 'bj_choco_lotta', name: "Choco-lotta Cheesecake (Ben & Jerry's)", description: "Helado de tarta de queso al cacao con trozos de chocolate con sal marina y galletas de cacao", price: 7.90, category: 'Postres' },
+  { id: 'bj_cookie_dough', name: "Cookie Dough (Ben & Jerry's)", description: "Helado de vainilla con galletas y pepitas de chocolate", price: 7.50, category: 'Postres' },
+  { id: 'bj_fudge_brownie', name: "Chocolate Fudge Brownie (Ben & Jerry's)", description: "Helado de chocolate súper cremoso con trozos jugosos de brownie", price: 7.50, category: 'Postres' },
+  { id: 'bj_chunky_monkey', name: "Chunky Monkey (Ben & Jerry's)", description: "Helado de plátano con trozos de chocolate y nueces crujientes", price: 7.50, category: 'Postres' },
+  { id: 'bj_strawberry', name: "Strawberry Cheesecake (Ben & Jerry's)", description: "Helado sabor tarta de queso con salsa de fresas y galleta graham", price: 7.50, category: 'Postres' },
+  { id: 'bj_pecan_blondie', name: "Vanilla Pecan Blondie (Ben & Jerry's)", description: "Helado de vainilla con trozos de brownie rubio rubio y caramelo salado", price: 7.50, category: 'Postres' },
+  { id: 'bj_caramel_brownie', name: "Caramel Brownie Party (Ben & Jerry's)", description: "Helado de caramelo intenso con trozos de brownie suave", price: 7.50, category: 'Postres' },
+  { id: 'bj_peanut_butter_cup', name: "Peanut Butter Cup (Ben & Jerry's)", description: "Helado de crema de cacahuete con tazas de cacao y crema de cacahuete", price: 7.50, category: 'Postres' },
+  { id: 'bj_half_baked', name: "Half Baked (Ben & Jerry's)", description: "Helado de chocolate y vainilla, trozos de brownie de chocolate y masa de galletas con pepitas de chocolate", price: 7.50, category: 'Postres' },
+  { id: 'bj_vegan_brownie', name: "Chocolate Fudge Brownie Vegano (Ben & Jerry's)", description: "Nuestra mítica versión libre de lácteos e ingredientes veganos", price: 7.50, category: 'Postres', tags: ['Vegano'] },
+  { id: 'bj_vegan_cookies', name: "Cookies on Cookie Dough Vegano (Ben & Jerry's)", description: "Helado vegano de caramelo con galletas crujientes y trozos chocolateados de masa", price: 7.50, category: 'Postres', tags: ['Vegano'] },
+  { id: 'bj_netflix', name: "Netflix & Chilll'd (Ben & Jerry's)", description: "Helado de crema de cacahuete con remolinos de pretzel dulce y salado y tarta de chocolate", price: 7.50, category: 'Postres' }
 ];
 
 export const INVENTORY: InventoryItem[] = [
@@ -194,6 +241,53 @@ export const INVENTORY: InventoryItem[] = [
   { id: 'i15', name: 'Salsa Miel y Mostaza', category: 'Salsas', currentStock: 10, unit: 'botes', minLevel: 3, status: 'In Stock' },
   { id: 'i16', name: 'Envases de Salsa Pequeños', category: 'Envases', currentStock: 500, unit: 'uds', minLevel: 100, status: 'In Stock' },
   { id: 'i17', name: 'Envases de Salsa Grandes', category: 'Envases', currentStock: 300, unit: 'uds', minLevel: 50, status: 'In Stock' },
+
+  // BEBIDAS EN INVENTARIO
+  { id: 'inv_c_cola_lata', name: 'Lata de Coca-Cola', category: 'Bebidas', currentStock: 300, unit: 'latas', minLevel: 50, status: 'In Stock' },
+  { id: 'inv_c_cola_zero', name: 'Lata de Coca-Cola Zero', category: 'Bebidas', currentStock: 250, unit: 'latas', minLevel: 40, status: 'In Stock' },
+  { id: 'inv_fanta_naranja', name: 'Lata de Fanta Naranja', category: 'Bebidas', currentStock: 200, unit: 'latas', minLevel: 30, status: 'In Stock' },
+  { id: 'inv_fanta_limon', name: 'Lata de Fanta Limón', category: 'Bebidas', currentStock: 180, unit: 'latas', minLevel: 30, status: 'In Stock' },
+  { id: 'inv_sprite_lata', name: 'Lata de Sprite', category: 'Bebidas', currentStock: 150, unit: 'latas', minLevel: 25, status: 'In Stock' },
+  { id: 'inv_aquarius_naranja', name: 'Aquarius Naranja', category: 'Bebidas', currentStock: 120, unit: 'latas', minLevel: 20, status: 'In Stock' },
+  { id: 'inv_aquarius_limon', name: 'Aquarius Limón', category: 'Bebidas', currentStock: 120, unit: 'latas', minLevel: 20, status: 'In Stock' },
+  { id: 'inv_cerveza_lata', name: 'Lata de Cerveza', category: 'Bebidas', currentStock: 400, unit: 'latas', minLevel: 60, status: 'In Stock' },
+  { id: 'inv_agua_peq', name: 'Botella Agua Pequeña', category: 'Bebidas', currentStock: 200, unit: 'uds', minLevel: 40, status: 'In Stock' },
+  { id: 'inv_agua_grd', name: 'Botella Agua Grande', category: 'Bebidas', currentStock: 100, unit: 'uds', minLevel: 20, status: 'In Stock' },
+  { id: 'inv_litrona', name: 'Litrona de Cerveza', category: 'Bebidas', currentStock: 150, unit: 'botellas', minLevel: 30, status: 'In Stock' },
+  { id: 'inv_vino_copa', name: 'Vino Tinto/Blanco', category: 'Bebidas', currentStock: 40, unit: 'botellas', minLevel: 8, status: 'In Stock' },
+  { id: 'inv_cafe_grano', name: 'Café de Grano', category: 'Bebidas', currentStock: 15, unit: 'kg', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_carajillo_licor', name: 'Licor Carajillo', category: 'Bebidas', currentStock: 10, unit: 'botellas', minLevel: 2, status: 'In Stock' },
+  { id: 'inv_cola_grande_bt', name: 'Refresco Cola Grande 1L', category: 'Bebidas', currentStock: 100, unit: 'latas', minLevel: 20, status: 'In Stock' },
+
+  // POSTRES EN INVENTARIO
+  { id: 'inv_pistamisu', name: 'Pistamisu Ración', category: 'Postres', currentStock: 30, unit: 'uds', minLevel: 5, status: 'In Stock' },
+  { id: 'inv_cheesecake_pr', name: 'Cheesecake Pantera Rosa Ración', category: 'Postres', currentStock: 25, unit: 'uds', minLevel: 5, status: 'In Stock' },
+  { id: 'inv_panacota_turron', name: 'Panacota de Turrón Ración', category: 'Postres', currentStock: 20, unit: 'uds', minLevel: 5, status: 'In Stock' },
+  { id: 'inv_bj_spectacu_love', name: "Helado B&J Spectacu-love 465ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_marshmallow', name: "Helado B&J Marshmallow & S'more 427ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_dulce', name: "Helado B&J Dulce-De-Lish 427ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_vermont_ster', name: "Helado B&J Cookie Vermont-ster 427ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_choco_lotta', name: "Helado B&J Choco-lotta 427ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_cookie_dough', name: "Helado B&J Cookie Dough 465ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_fudge_brownie', name: "Helado B&J Chocolate Fudge Brownie 465ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_chunky_monkey', name: "Helado B&J Chunky Monkey 465ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_strawberry', name: "Helado B&J Strawberry Cheesecake 465ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_pecan_blondie', name: "Helado B&J Vanilla Pecan Blondie 465ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_caramel_brownie', name: "Helado B&J Caramel Brownie Party 465ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_peanut_butter_cup', name: "Helado B&J Peanut Butter Cup 465ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_half_baked', name: "Helado B&J Half Baked 465ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_vegan_brownie', name: "Helado B&J Choc Fudge Brownie Vegano 465ml", category: 'Postres', currentStock: 12, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_vegan_cookies', name: "Helado B&J Cookies on CD Vegano 465ml", category: 'Postres', currentStock: 12, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_bj_netflix', name: "Helado B&J Netflix & Chilll'd 465ml", category: 'Postres', currentStock: 15, unit: 'tarrinas', minLevel: 3, status: 'In Stock' },
+
+  // INGREDIENTES EXCLUSIVOS HAMBURGUESAS DELTOYA Y BLACK BULL
+  { id: 'inv_donut_pollo', name: 'Donut de Pollo', category: 'Ingredientes', currentStock: 40, unit: 'uds', minLevel: 10, status: 'In Stock' },
+  { id: 'inv_doritos', name: 'Triángulos Doritos', category: 'Ingredientes', currentStock: 10, unit: 'kg', minLevel: 2, status: 'In Stock' },
+  { id: 'inv_torreznos', name: 'Torreznos', category: 'Ingredientes', currentStock: 15, unit: 'kg', minLevel: 3, status: 'In Stock' },
+  { id: 'inv_toro_lidia', name: 'Toro de Lidia BBQ', category: 'Ingredientes', currentStock: 30, unit: 'uds', minLevel: 8, status: 'In Stock' },
+  { id: 'inv_mayo_sriracha', name: 'Salsa Mayo Sriracha', category: 'Salsas', currentStock: 8, unit: 'botes', minLevel: 2, status: 'In Stock' },
+  { id: 'inv_aro_cebolla_pic', name: 'Aros Cebolla Picante', category: 'Ingredientes', currentStock: 200, unit: 'uds', minLevel: 40, status: 'In Stock' },
+  { id: 'inv_aro_cebolla_norm', name: 'Aros Cebolla Normales', category: 'Ingredientes', currentStock: 300, unit: 'uds', minLevel: 50, status: 'In Stock' }
 ];
 
 export const ORDERS: Order[] = [

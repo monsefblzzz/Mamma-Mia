@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useStore } from '../context/StoreContext';
 import { MenuItem } from '../types';
-import { Pencil, Trash2, Plus, X, Image as ImageIcon, UtensilsCrossed, GripVertical, Sparkles, Check, Wheat, Nut, Milk, Fish, Egg, Vegan } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Image as ImageIcon, UtensilsCrossed, GripVertical, Sparkles, Check, Wheat, Nut, Milk, Fish, Egg, Vegan, QrCode, Download, Printer } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   DndContext,
   closestCenter,
@@ -48,7 +49,8 @@ const SortableMenuItem: React.FC<{
   item: MenuItem; 
   onEdit: (item: MenuItem) => void;
   onDelete: (id: string) => void;
-}> = ({ item, onEdit, onDelete }) => {
+  onShowQR: (item: MenuItem) => void;
+}> = ({ item, onEdit, onDelete, onShowQR }) => {
   const {
     attributes,
     listeners,
@@ -119,6 +121,9 @@ const SortableMenuItem: React.FC<{
             </div>
           )}
           <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-auto">
+            <button onClick={() => onShowQR(item)} className="bg-brand-secondary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all cursor-pointer">
+              <QrCode size={14} />
+            </button>
             <button onClick={() => onEdit(item)} className="bg-brand-yellow text-black w-8 h-8 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all cursor-pointer">
               <Pencil size={14} />
             </button>
@@ -286,6 +291,7 @@ export function CMS() {
   const [error, setError] = useState<string | null>(null);
   
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [qrItem, setQrItem] = useState<MenuItem | null>(null);
   const [sortByPopular, setSortByPopular] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
@@ -432,6 +438,53 @@ export function CMS() {
         onClose={() => setItemToDelete(null)}
         type="danger"
       />
+
+      {/* QR Modal */}
+      {qrItem && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in relative" style={{ zIndex: 9999 }}>
+            <div className="bg-surface-base border-2 border-brand-primary/50 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative">
+                <button 
+                  onClick={() => setQrItem(null)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-white bg-black/50 p-2 rounded-full transition-colors"
+                >
+                    <X size={20} />
+                </button>
+                <div className="text-center">
+                    <h3 className="text-2xl font-black text-brand-primary mb-2 uppercase">{qrItem.name}</h3>
+                    <p className="text-sm text-gray-400 mb-6 font-bold uppercase tracking-widest">Escanea para ver</p>
+                    <div className="bg-white p-4 rounded-2xl inline-block mb-6 relative group border-4 border-white">
+                        <QRCodeSVG 
+                           value={`${window.location.origin}/cliente?item=${qrItem.id}`} 
+                           size={200}
+                           id={`qr-${qrItem.id}`}
+                        />
+                    </div>
+                    <div className="flex gap-4 w-full">
+                        <button 
+                           onClick={() => {
+                               const svg = document.getElementById(`qr-${qrItem.id}`);
+                               if (svg) {
+                                  const svgData = new XMLSerializer().serializeToString(svg);
+                                  const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = `qr-${qrItem.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.svg`;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                               }
+                           }}
+                           className="flex-1 bg-surface-container hover:bg-white/10 text-white font-bold uppercase tracking-widest text-[10px] px-4 py-3 rounded-xl transition-all border border-white/10 flex items-center justify-center gap-2"
+                        >
+                            <Download size={14} />
+                            Guardar SVG
+                        </button>
+                    </div>
+                </div>
+            </div>
+         </div>
+      )}
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container p-6 rounded-2xl border border-white/10">
         <div>
@@ -532,6 +585,21 @@ export function CMS() {
                         <option value={formData.category}>{formData.category}</option>
                       )}
                     </select>
+                  </div>
+                  <div className="col-span-1 md:col-span-3">
+                    <label className="text-xs tracking-wider text-brand-primary font-bold uppercase mb-2 block">Imagen URL</label>
+                    <div className="flex gap-4">
+                        <input 
+                          type="text" 
+                          value={formData.image || ''} 
+                          onChange={e => setFormData({...formData, image: e.target.value})}
+                          placeholder="https://..."
+                          className="flex-1 bg-black/40 border border-white/10 rounded-xl p-3.5 text-white focus:border-brand-primary outline-none transition-colors"
+                        />
+                        {formData.image && (
+                            <img src={formData.image} alt="Preview" className="w-12 h-12 rounded-lg object-cover shrink-0 border border-white/10" />
+                        )}
+                    </div>
                   </div>
                   <div className="md:col-span-3">
                     <label className="text-xs tracking-wider text-brand-primary font-bold uppercase mb-2 block">Etiquetas</label>
@@ -771,6 +839,7 @@ export function CMS() {
                         item={item} 
                         onEdit={handleEdit} 
                         onDelete={handleDeleteMenuItem} 
+                        onShowQR={setQrItem}
                       />
                     ))}
                   </div>

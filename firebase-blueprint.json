@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "Represents an order placed by a customer",
+      "type": "object",
+      "properties": {
+        "customer": { "type": "string" },
+        "phone": { "type": "string" },
+        "time": { "type": "string" },
+        "date": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "items": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "status": {
+          "type": "string",
+          "enum": ["PENDIENTE", "PREPARANDO", "LISTO", "EN_REPARTO", "COMPLETADO"]
+        },
+        "type": {
+          "type": "string",
+          "enum": ["DOMICILIO", "RECOGIDA", "MESA"]
+        },
+        "total": { "type": "number" },
+        "table": { "type": "string" },
+        "address": { "type": "string" },
+        "paymentMethod": { "type": "string" }
+      },
+      "required": ["customer", "createdAt", "status", "type", "total", "items"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Stores all orders"
+    }
+  }
+}
