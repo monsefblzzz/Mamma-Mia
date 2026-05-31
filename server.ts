@@ -6,9 +6,28 @@ import { PGlite } from '@electric-sql/pglite';
 import webPush from 'web-push';
 
 async function setupDatabase() {
-  const dbPath = process.env.NODE_ENV === "production" ? "/tmp/database_pg" : path.join(process.cwd(), "database_pg");
-  const db = new PGlite(dbPath);
+  const isProd = process.env.NODE_ENV === "production";
+  const sourceDbPath = path.join(process.cwd(), "database_pg");
+  const dbPath = isProd ? "/tmp/database_pg" : sourceDbPath;
 
+  if (isProd) {
+    const fs = await import('fs');
+    if (!fs.existsSync(dbPath) && fs.existsSync(sourceDbPath)) {
+      console.log('Copying existing database_pg to /tmp/database_pg...');
+      fs.cpSync(sourceDbPath, dbPath, { recursive: true });
+    }
+  }
+
+  let db: PGlite;
+  try {
+    db = new PGlite(dbPath);
+    await db.exec(`SELECT 1`); // Test connection
+  } catch (err) {
+    console.warn("Failed to initialize PGlite on disk, falling back to memory database.", err);
+    db = new PGlite("memory://");
+  }
+
+  try {
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -57,12 +76,16 @@ async function setupDatabase() {
       updated_at BIGINT
     );
   `);
+  } catch (err) {
+    console.error("Critical error during database schema creation:", err);
+  }
   return db;
 }
 
 async function startServer() {
+  try {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
   
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -487,6 +510,10 @@ async function startServer() {
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
+  } catch (err: any) {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  }
 }
 
 startServer();
