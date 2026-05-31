@@ -5,22 +5,24 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Epilogue", ui-sans-serif, sans-serif;
 
-  --color-brand-primary: #F9CE1D;
-  --color-brand-yellow: #F9CE1D;
-  --color-brand-red: #D62E2E;
-  --color-brand-blue: #1D70B8;
+  --color-brand-primary: #FFC107;
+  --color-brand-yellow: #FFC107;
+  --color-brand-red: #E52521;
+  --color-brand-blue: #0050A0;
   --color-brand-light-blue: #1D70B8;
   --color-brand-brown: #C78E3C;
-  --color-surface-base: #1A1A1A;
-  --color-surface-container: #262626;
-  --color-surface-container-high: #333333;
-  --color-surface-bright: #F5F5F5;
-  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-surface-base: #000000;
+  --color-surface-container: #0A0A0A;
+  --color-surface-container-high: #141414;
+  --color-surface-bright: #333333;
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
 }
 
 @layer base {
   body {
-    @apply bg-surface-base text-white font-sans antialiased selection:bg-white selection:text-black;
+    @apply bg-surface-base text-white font-sans antialiased selection:bg-brand-primary selection:text-black;
+    background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+    background-attachment: fixed;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -98,4 +100,27 @@
 
 .notification-status-indicator.data-pulsing {
   animation: notificationPulse 1s ease-in-out infinite;
+}
+
+.edit-button::after {
+  content: '';
+  position: absolute;
+  top: -24px;
+  right: -24px;
+  bottom: -24px;
+  left: -24px;
+}
+.edit-button {
+  position: relative;
+  z-index: 100000 !important;
+}
+
+.cms-list-item-actions {
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
+.menu-item-image {
+  filter: none !important;
+  -webkit-filter: none !important;
 }

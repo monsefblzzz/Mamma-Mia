@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShoppingCart, Mic, Send, ChefHat, MapPin, ChevronRight, Plus, Minus, Sparkles, Loader2, Check, AlertCircle, CheckCircle } from 'lucide-react';
+import { ShoppingCart, Mic, Send, ChefHat, MapPin, ChevronRight, Plus, Minus, Sparkles, Loader2, Check, AlertCircle, CheckCircle, Search, X, LayoutGrid, List } from 'lucide-react';
 import { dbService } from '../db/DatabaseService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -8,10 +8,25 @@ import { useStore } from '../context/StoreContext';
 import { PizzaTracker } from '../components/PizzaTracker';
 import { NotificationManager } from '../components/NotificationManager';
 
+const highlightMatch = (text: string, query: string) => {
+    if (!query || !text) return text;
+    const regex = new RegExp(`(${query})`, 'gi');
+    const parts = text.split(regex);
+    return (
+        <>
+            {parts.map((part, i) => 
+                part.toLowerCase() === query.toLowerCase() ? (
+                    <span key={i} className="text-brand-primary bg-brand-primary/10 rounded px-0.5">{part}</span>
+                ) : (
+                    <span key={i}>{part}</span>
+                )
+            )}
+        </>
+    );
+};
+
 export const AppCliente = () => {
-    const { orders, addOrder } = useStore();
-    const [products, setProducts] = useState<any[]>([]);
-    const [categories, setCategories] = useState<string[]>([]);
+    const { orders, addOrder, menuItems: products, categories } = useStore();
     const [cart, setCart] = useState<{product: any, qty: number, notes?: string}[]>([]);
     const [orderText, setOrderText] = useState('');
     const [isCartOpen, setIsCartOpen] = useState(false);
@@ -19,6 +34,8 @@ export const AppCliente = () => {
     const [aiResponse, setAiResponse] = useState<{ reply: string, parsedItems: any[] } | null>(null);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [viewMode, setViewMode] = useState<'card' | 'compact'>('card');
     
     const { user, login } = useAuth();
     const navigate = useNavigate();
@@ -52,19 +69,6 @@ export const AppCliente = () => {
         setBoxDrink('');
         setBoxSnack('');
     };
-
-    useEffect(() => {
-        const fetchProducts = async () => {
-            const fetchedCategories = await dbService.getCategories();
-            const prods = await dbService.getProducts();
-            setCategories(fetchedCategories.map((c: any) => c.name));
-            setProducts(prods.map((p: any) => ({...p, category: p.category_name, image: p.image_url})));
-        };
-        fetchProducts();
-        
-        const unsubscribe = dbService.subscribe(fetchProducts);
-        return () => { unsubscribe(); };
-    }, []);
 
     const addToCart = (product: any, notes?: string, customPriceOffset: number = 0) => {
         setCart(prev => {
@@ -362,54 +366,109 @@ export const AppCliente = () => {
                 </div>
             {/* Menu Layout */}
             <div className="px-6 space-y-8">
+                {/* Search Bar & View Toggle */}
+                <div className="flex gap-4">
+                    <div className="relative flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Search className="h-5 w-5 text-brand-primary/50" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Buscar pizzas, ingredientes, categorías..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="block w-full pl-11 pr-10 py-4 bg-surface-container/60 border border-white/10 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all backdrop-blur-md"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                            >
+                                <X className="h-5 w-5 text-gray-400 hover:text-white transition-colors" />
+                            </button>
+                        )}
+                    </div>
+                    <div className="bg-surface-container/60 border border-white/10 rounded-2xl flex p-1 backdrop-blur-md shrink-0">
+                        <button
+                            onClick={() => setViewMode('card')}
+                            className={`p-3 rounded-xl transition-all ${viewMode === 'card' ? 'bg-brand-primary text-black scale-105 shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                            title="Vista Tarjetas"
+                        >
+                            <LayoutGrid size={20} />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('compact')}
+                            className={`p-3 rounded-xl transition-all ${viewMode === 'compact' ? 'bg-brand-primary text-black scale-105 shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                            title="Vista Compacta"
+                        >
+                            <List size={20} />
+                        </button>
+                    </div>
+                </div>
+
                 {categories.map(category => {
-                    const categoryProducts = products.filter(p => p.category === category);
+                    const categoryProducts = products.filter(p => p.category === category).filter(p => {
+                        if (!searchQuery) return true;
+                        const query = searchQuery.toLowerCase();
+                        return p.name.toLowerCase().includes(query) || 
+                               (p.description && p.description.toLowerCase().includes(query)) ||
+                               category.toLowerCase().includes(query);
+                    });
                     if (categoryProducts.length === 0) return null;
                     return (
                     <div key={category} className="mb-8">
                         <h3 className="text-xl font-display font-black mb-5 tracking-tight text-white flex items-center gap-2">
                             <span className="w-1.5 h-6 bg-brand-primary rounded-full"></span>
-                            {category}
+                            {highlightMatch(category, searchQuery)}
                         </h3>
-                        <div className="space-y-4">
+                        <div className={`grid gap-4 ${viewMode === 'compact' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                             {categoryProducts.map(product => {
                                 const isPopular = product.isPopular || product.tags?.includes('popular') || product.tags?.includes('premium');
-                                const itemImage = product.image || product.image_url;
+                                const itemImage = product.image;
                                 
                                 return (
                                     <motion.div 
                                         key={product.id}
-                                        className="bg-surface-container/60 hover:bg-surface-container/90 backdrop-blur-md rounded-3xl p-4 flex gap-4 border border-white/5 hover:border-white/10 shadow-lg relative overflow-hidden transition-colors"
+                                        className={`bg-surface-container/60 hover:bg-surface-container/90 backdrop-blur-md flex border border-white/5 hover:border-white/10 shadow-lg relative overflow-hidden transition-colors cursor-pointer group ${viewMode === 'compact' ? 'p-3 gap-3 rounded-2xl items-center' : 'rounded-3xl p-4 gap-4'}`}
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        {isPopular && (
-                                            <div className="absolute top-0 right-0 bg-gradient-to-l from-brand-primary/20 to-transparent text-[10px] font-black text-brand-primary px-3 py-1 bg-black/40 rounded-bl-xl border-l border-b border-white/5 uppercase tracking-widest">
+                                        {isPopular && viewMode !== 'compact' && (
+                                            <div className="absolute top-0 right-0 bg-gradient-to-l from-brand-primary/20 to-transparent text-[10px] font-black text-brand-primary px-3 py-1 bg-black/40 rounded-bl-xl border-l border-b border-white/5 uppercase tracking-widest z-10">
                                                 Premium 🔥
                                             </div>
                                         )}
-                                        <div className="w-24 h-24 bg-black/35 rounded-2xl flex-shrink-0 flex items-center justify-center border border-white/5 overflow-hidden relative shadow-inner">
+                                        <div className={`bg-black/35 flex-shrink-0 flex items-center justify-center border border-white/5 overflow-hidden relative shadow-inner ${viewMode === 'compact' ? 'w-14 h-14 rounded-xl' : 'w-24 h-24 rounded-2xl'}`}>
                                              {itemImage ? (
-                                                <img src={itemImage} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <img src={itemImage} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 menu-item-image" />
                                              ) : (
-                                                <ChefHat size={32} className="text-gray-600 opacity-40"/>
+                                                <ChefHat size={viewMode === 'compact' ? 24 : 32} className="text-gray-600 opacity-40"/>
                                              )}
                                         </div>
-                                        <div className="flex-1 flex flex-col justify-between py-1">
-                                            <div>
-                                                <h4 className="font-bold text-white text-sm leading-tight tracking-tight pr-14">{product.name}</h4>
-                                                <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed font-medium">{product.description || 'Delicioso producto elaborado de forma puramente artesanal con ingredientes frescos locales.'}</p>
+                                        <div className={`flex-1 flex ${viewMode === 'compact' ? 'flex-row items-center justify-between gap-4 min-w-0' : 'flex-col justify-between py-1 relative min-w-0'}`}>
+                                            <div className={`${viewMode === 'compact' ? 'flex-1 min-w-0 pr-2' : ''}`}>
+                                                <h4 className={`font-bold text-white text-sm leading-tight tracking-tight ${viewMode === 'compact' ? 'truncate pr-0' : 'pr-14 break-words'}`}>
+                                                    {highlightMatch(product.name, searchQuery)}
+                                                    {isPopular && viewMode === 'compact' && <span className="ml-2 text-[10px] text-brand-primary tracking-widest uppercase inline-block">Premium 🔥</span>}
+                                                </h4>
+                                                {viewMode !== 'compact' && (
+                                                    <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed font-medium">{highlightMatch(product.description || 'Delicioso producto elaborado de forma puramente artesanal con ingredientes frescos locales.', searchQuery)}</p>
+                                                )}
+                                                {viewMode === 'compact' && product.description && (
+                                                    <p className="text-xs text-gray-500 mt-0.5 truncate">{highlightMatch(product.description, searchQuery)}</p>
+                                                )}
                                             </div>
-                                            <div className="flex justify-between items-center mt-3">
-                                                <span className="font-black text-brand-primary font-mono text-sm">€{Number(product.price).toFixed(2)}</span>
+                                            <div className={`flex items-center gap-3 ${viewMode === 'compact' ? 'shrink-0' : 'justify-between mt-3'}`}>
+                                                <span className="font-black text-brand-primary font-mono text-sm shrink-0">€{Number(product.price).toFixed(2)}</span>
                                                 <button 
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         if (product.id === 'box1' || product.name.toLowerCase().includes('box')) {
                                                             setBoxCustomizing(product);
                                                         } else {
                                                             addToCart(product);
                                                         }
                                                     }}
-                                                    className="bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-black w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-90 border border-brand-primary/25 cursor-pointer"
+                                                    className="bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-black w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-90 border border-brand-primary/25 cursor-pointer z-10 shrink-0"
                                                     title="Añadir al Carrito"
                                                 >
                                                     <Plus size={16} strokeWidth={3} />

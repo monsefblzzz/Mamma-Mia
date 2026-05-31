@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Bell, CheckCircle2, XCircle, RefreshCw, Search, Calendar } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useStore } from '../context/StoreContext';
+import { toast } from 'sonner';
 
 interface PushLog {
     id: string;
@@ -58,7 +59,7 @@ export const PushNotificationHistory = () => {
 
     const handleSendTest = async () => {
         if (!storeSettings.vapidKey || !storeSettings.vapidPrivateKey) {
-            alert('Debe guardar primero la clave VAPID pública y privada en los ajustes de la tienda.');
+            toast.error('Debe guardar primero la clave VAPID pública y privada en los ajustes de la tienda.');
             return;
         }
         try {
@@ -76,9 +77,9 @@ export const PushNotificationHistory = () => {
                 setTimeout(() => indicator.classList.remove('data-pulsing'), 2000);
             }
             fetchLogs();
-            alert('Enviando notificación...');
+            toast.success('Notificación de prueba enviada exitosamente.');
         } catch (e) {
-            alert('Error enviando prueba');
+            toast.error('Error enviando notificación de prueba');
         }
     };
 

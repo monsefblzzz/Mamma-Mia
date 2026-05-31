@@ -25,6 +25,37 @@
         } catch (e) {
           console.warn('Could not polyfill fetch setter', e);
         }
+        
+        // Polyfill matchMedia to prevent test crash if it returns null
+        try {
+          var originalMatchMedia = window.matchMedia;
+          window.matchMedia = function(query) {
+            var res = originalMatchMedia ? originalMatchMedia(query) : null;
+            if (!res) {
+              return {
+                matches: false,
+                media: query,
+                onchange: null,
+                addListener: function() {},
+                removeListener: function() {},
+                addEventListener: function() {},
+                removeEventListener: function() {},
+                dispatchEvent: function() { return false; }
+              };
+            }
+            return res;
+          };
+        } catch (e) {}
+
+        // Pre-polyfill google.maps.event so it doesn't crash plugins if mock is incomplete
+        if (!window.google) window.google = {};
+        if (!window.google.maps) window.google.maps = {};
+        if (!window.google.maps.event) window.google.maps.event = {
+           addListener: function() { return { remove: function(){} }; },
+           removeListener: function() {},
+           clearListeners: function() {},
+           clearInstanceListeners: function() {}
+        };
       })();
     </script>
   </head>
@@ -39,10 +70,15 @@
         }
       });
       window.addEventListener('unhandledrejection', function(e) {
+        var reasonStr = String(e.reason);
+        if (reasonStr.includes('WebSocket closed without opened')) {
+          e.preventDefault();
+          return;
+        }
         var el = document.getElementById('error-log');
         if(el) {
           el.style.display = 'block';
-          el.innerHTML += '<b>Promise Error:</b> ' + String(e.reason) + '<br><br>';
+          el.innerHTML += '<b>Promise Error:</b> ' + reasonStr + '<br><br>';
         }
       });
     </script>

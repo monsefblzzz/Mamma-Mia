@@ -23,22 +23,39 @@ export function AddressAutocomplete({ value, onChange, onAddressSelect, classNam
       fields: ['formatted_address', 'geometry', 'name'],
     };
 
-    const autocompleteInstance = new placesLib.Autocomplete(inputRef.current, options);
-    setAutocomplete(autocompleteInstance);
+    let autocompleteInstance;
+    try {
+        autocompleteInstance = new placesLib.Autocomplete(inputRef.current, options);
+        setAutocomplete(autocompleteInstance);
+    } catch (e) {
+        console.warn("Autocomplete widget error:", e);
+        return;
+    }
 
-    autocompleteInstance.addListener('place_changed', () => {
-      const place = autocompleteInstance.getPlace();
-      if (place && place.formatted_address) {
-        onChange(place.formatted_address);
-        if (onAddressSelect) {
-           onAddressSelect(
-              place.formatted_address, 
-              place.geometry?.location?.lat(), 
-              place.geometry?.location?.lng()
-           );
-        }
+    if (autocompleteInstance) {
+      const gme = google?.maps?.event;
+      let listener: any;
+      if (gme && gme.addListener) {
+        listener = gme.addListener(autocompleteInstance, 'place_changed', () => {
+          const place = autocompleteInstance.getPlace();
+          if (place && place.formatted_address) {
+            onChange(place.formatted_address);
+            if (onAddressSelect) {
+               onAddressSelect(
+                  place.formatted_address, 
+                  place.geometry?.location?.lat(), 
+                  place.geometry?.location?.lng()
+               );
+            }
+          }
+        });
       }
-    });
+      return () => {
+        if (listener && gme) {
+          gme.removeListener(listener);
+        }
+      };
+    }
   }, [placesLib]);
 
   return (

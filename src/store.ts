@@ -42,7 +42,7 @@ export const useAppStore = create<StoreState>()(
   persist(
     (set, get) => ({
       menuItems: MENU_ITEMS,
-      categories: Array.from(new Set(MENU_ITEMS.map((i: MenuItem) => i.category))).sort(),
+      categories: ["Pizzas", "Hamburguesas", "Aperitivos", "Bocadillos", "Patatas Fritas", "Menú Infantil", "Menús Especiales", "Ensaladas", "Bebidas", "Postres"],
       orders: [],
       cart: [],
       storeSettings: INITIAL_STORE_SETTINGS,
@@ -58,6 +58,18 @@ export const useAppStore = create<StoreState>()(
           get().fetchData();
         });
         await get().fetchData();
+
+        // Check if VAPID keys exist after fetching from store
+        const st = get().storeSettings;
+        if (!st.vapidKey || !st.vapidPrivateKey) {
+            try {
+                const res = await fetch('/api/push/generate-keys');
+                const keys = await res.json();
+                get().updateStoreSettings({ vapidKey: keys.publicKey, vapidPrivateKey: keys.privateKey });
+            } catch (e) {
+                console.error("Failed to automatically generate VAPID keys:", e);
+            }
+        }
 
         // Listen to Firebase Orders
         onSnapshot(collection(db, 'orders'), (snapshot) => {
@@ -167,16 +179,43 @@ export const useAppStore = create<StoreState>()(
 
         // Initial UI could show MENU_ITEMS if DB is empty, but we seed the DB initially.
         const menuItems = mappedProducts.length > 0 ? mappedProducts : MENU_ITEMS;
-        const activeCats = Array.from(new Set(menuItems.map(i => i.category))).sort();
+        // Keep existing categories order, append any new ones
+        const currentCats = get().categories || [];
+        const dbCats = Array.from(new Set(menuItems.map(i => i.category)));
         
-        set({ menuItems, categories: activeCats });
+        const DESIRED_ORDER = [
+          "Pizzas",
+          "Hamburguesas",
+          "Aperitivos",
+          "Bocadillos",
+          "Patatas Fritas",
+          "Menú Infantil",
+          "Menús Especiales",
+          "Ensaladas",
+          "Bebidas",
+          "Postres"
+        ];
+        
+        // Let's migrate their local array to the desired order if it doesn't match the new required structure
+        // If Pizzas isn't first, forcefully apply the new order.
+        let finalCats = [...currentCats.filter(c => dbCats.includes(c)), ...dbCats.filter(c => !currentCats.includes(c))];
+        
+        const isLegacyAlphabetical = finalCats[0] === 'Aperitivos' && finalCats[1] === 'Bebidas';
+        if (isLegacyAlphabetical) {
+           finalCats = [...DESIRED_ORDER.filter(c => dbCats.includes(c)), ...dbCats.filter(c => !DESIRED_ORDER.includes(c))];
+        }
+        
+        set({ menuItems, categories: finalCats });
       },
 
       addMenuItem: (item) => {
         dbService.upsertProduct(item);
         set((state) => {
           const newItems = [...state.menuItems, item];
-          const activeCats = Array.from(new Set(newItems.map(i => i.category))).sort();
+          const currentCats = state.categories || [];
+          const activeCats = currentCats.includes(item.category) 
+             ? currentCats 
+             : [...currentCats, item.category];
           
           // Send broadcast push
           const st = get().storeSettings;
@@ -335,6 +374,7 @@ export const useAppStore = create<StoreState>()(
       name: 'mamma-mia-storage',
       partialize: (state) => ({ 
         cart: state.cart,
+        categories: state.categories,
         storeSettings: state.storeSettings
       }),
     }

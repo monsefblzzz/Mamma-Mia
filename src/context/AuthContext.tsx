@@ -14,6 +14,7 @@ export interface User {
   hasUsedWelcomeCoupon?: boolean;
   vapidKey?: string;
   savedAddresses?: string[];
+  avatarUrl?: string;
 }
 
 interface AuthContextType {

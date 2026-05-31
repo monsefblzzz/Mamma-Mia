@@ -47,6 +47,15 @@ async function setupDatabase() {
       failureCount INTEGER,
       details_json TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS subscriber_push_status (
+      id TEXT PRIMARY KEY,
+      phone TEXT,
+      endpoint TEXT,
+      status TEXT,
+      error_message TEXT,
+      updated_at BIGINT
+    );
   `);
   return db;
 }
@@ -135,6 +144,28 @@ async function startServer() {
     } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
+  // API: Get Lifetime Order Value
+  app.get('/api/users/:phone/lifetime-value', async (req, res) => {
+    try {
+      const { phone } = req.params;
+      const result = await db.query("SELECT SUM(total) as lifetime_total FROM orders WHERE phone = $1 AND status = 'COMPLETADO'", [phone]);
+      const lifetimeTotal = (result.rows[0] as any)?.lifetime_total || 0;
+      res.json({ lifetimeValue: Number(lifetimeTotal) });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // API: Get push delivery logs from Admin App
+  app.get('/api/push/subscriber-status', async (req, res) => {
+    try {
+      const result = await db.query('SELECT * FROM subscriber_push_status ORDER BY updated_at DESC LIMIT 100');
+      res.json(result.rows);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // API: Save Order
   app.post('/api/orders', async (req, res) => {
     try {
@@ -221,9 +252,9 @@ async function startServer() {
           for (const u of users) {
               const data = u.data_json ? JSON.parse(u.data_json as string) : {};
               if (data.notificationToken) {
+                  const pushSubscription = JSON.parse(data.notificationToken);
                   try {
                       // notificationToken is a stringified PushSubscription object
-                      const pushSubscription = JSON.parse(data.notificationToken);
                       await webPush.sendNotification(pushSubscription, JSON.stringify({ 
                           notification: {
                               title,
@@ -232,10 +263,22 @@ async function startServer() {
                       }));
                       successCount++;
                       results.push({ phone: u.phone, status: 'success' });
+
+                      await db.query(`
+                          INSERT INTO subscriber_push_status (id, phone, endpoint, status, error_message, updated_at)
+                          VALUES ($1, $2, $3, $4, $5, $6)
+                          ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, error_message = EXCLUDED.error_message, updated_at = EXCLUDED.updated_at
+                      `, [pushSubscription.endpoint, u.phone, pushSubscription.endpoint, 'success', '', Date.now()]);
                   } catch (e: any) {
                       console.error('Error sending push to user:', u.phone, e);
                       failureCount++;
                       results.push({ phone: u.phone, status: 'error', error: e.message });
+
+                      await db.query(`
+                          INSERT INTO subscriber_push_status (id, phone, endpoint, status, error_message, updated_at)
+                          VALUES ($1, $2, $3, $4, $5, $6)
+                          ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, error_message = EXCLUDED.error_message, updated_at = EXCLUDED.updated_at
+                      `, [pushSubscription.endpoint, u.phone, pushSubscription.endpoint, 'error', e.message, Date.now()]);
                   }
               }
           }
@@ -277,12 +320,24 @@ async function startServer() {
                       VALUES ($1, $2, $3, $4, $5, $6, $7)
                   `, [Date.now().toString(), title, body, Date.now(), 1, 0, JSON.stringify([{ phone, status: 'success' }])]);
                   
+                  await db.query(`
+                      INSERT INTO subscriber_push_status (id, phone, endpoint, status, error_message, updated_at)
+                      VALUES ($1, $2, $3, $4, $5, $6)
+                      ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, error_message = EXCLUDED.error_message, updated_at = EXCLUDED.updated_at
+                  `, [pushSubscription.endpoint, phone, pushSubscription.endpoint, 'success', '', Date.now()]);
+                  
               } catch (pushErr: any) {
                   // Log format
                   await db.query(`
                       INSERT INTO push_logs (id, title, body, sentAt, successCount, failureCount, details_json) 
                       VALUES ($1, $2, $3, $4, $5, $6, $7)
                   `, [Date.now().toString(), title, body, Date.now(), 0, 1, JSON.stringify([{ phone, status: 'error', error: pushErr.message }])]);
+                  
+                  await db.query(`
+                      INSERT INTO subscriber_push_status (id, phone, endpoint, status, error_message, updated_at)
+                      VALUES ($1, $2, $3, $4, $5, $6)
+                      ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, error_message = EXCLUDED.error_message, updated_at = EXCLUDED.updated_at
+                  `, [pushSubscription.endpoint, phone, pushSubscription.endpoint, 'error', pushErr.message, Date.now()]);
               }
               res.json({ success: true });
           } else {
@@ -414,7 +469,10 @@ async function startServer() {
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { 
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR === 'true' ? false : true 
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);

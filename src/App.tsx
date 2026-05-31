@@ -2,13 +2,15 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { cn } from './lib/utils';
-import { Clock, UserCircle, Package, ShoppingCart, Phone, Check, Star, Settings, Search, Calendar, Wheat, Nut, Milk, Fish, Egg, Vegan, RotateCcw, Printer, UtensilsCrossed, Users, X, Fingerprint, ScanFace, Scan, Navigation, MapPin, ShoppingBag, Bot, Send, MessageSquare, Pizza, Home, AlertCircle, Download } from 'lucide-react';
+import { Clock, UserCircle, Package, ShoppingCart, Phone, Check, Star, Settings, Search, Calendar, Wheat, Nut, Milk, Fish, Egg, Vegan, RotateCcw, Printer, UtensilsCrossed, Users, X, Fingerprint, ScanFace, Scan, Navigation, MapPin, ShoppingBag, Bot, Send, MessageSquare, Pizza, Home, AlertCircle, Download, Zap, ChevronDown, LayoutGrid, List, Plus } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Order } from './types';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { CMS } from './pages/CMS';
 import { ConfirmModal } from './components/ConfirmModal';
+import { Toaster, toast } from 'sonner';
+import { Drawer } from 'vaul';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -18,6 +20,7 @@ import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from '@
 import { GoogleMapsOverlay } from '@deck.gl/google-maps';
 import { HeatmapLayer } from '@deck.gl/aggregation-layers';
 import { AddressAutocomplete } from './components/AddressAutocomplete';
+import { MenuSelectionModal } from './components/MenuSelectionModal';
 
 import { AdminApp } from './pages/AdminApp';
 import { TauletaApp } from './pages/TauletaApp';
@@ -28,26 +31,41 @@ const PageWrapper = ({ children }: { children: React.ReactNode }) => (
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -15 }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
+        transition={{ type: "spring", duration: 0.4, bounce: 0.15 }}
     >
         {children}
     </motion.div>
 );
 
 const API_KEY =
+  (typeof process !== 'undefined' && process.env?.GOOGLE_MAPS_PLATFORM_KEY) ||
   (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
+  (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY ||
   (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
   '';
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
 
 function DeckGlOverlay({ layers }: { layers: any[] }) {
   const map = useMap();
+  const overlayRef = React.useRef<GoogleMapsOverlay | null>(null);
+
   React.useEffect(() => {
     if (!map) return;
     const overlay = new GoogleMapsOverlay({ layers });
     overlay.setMap(map);
-    return () => overlay.setMap(null);
-  }, [map, layers]);
+    overlayRef.current = overlay;
+    return () => {
+      overlay.setMap(null);
+      overlayRef.current = null;
+    };
+  }, [map]);
+
+  React.useEffect(() => {
+    if (overlayRef.current) {
+      overlayRef.current.setProps({ layers });
+    }
+  }, [layers]);
+
   return null;
 }
 
@@ -78,7 +96,7 @@ const Login = () => {
         let existingUser = getUserByPhone(phone);
         
         if (pin !== '1234') {
-            alert('PIN incorrecto (Usa 1234 para probar)');
+            toast.error('PIN incorrecto (Usa 1234 para probar)');
             return;
         }
 
@@ -88,7 +106,7 @@ const Login = () => {
         if (!isTestAccount && (!existingUser || !existingUser.verified)) {
             const code = Math.floor(100000 + Math.random() * 900000).toString();
             setExpectedSmsCode(code);
-            alert(`[SIMULACIÓN DE SMS]\nEnviado a: ${phone}\n\nTu código de verificación para Mamma Mia Nules es: ${code}`);
+            toast.info(`[SIMULACIÓN DE SMS] Enviado a: ${phone}. Tu código es: ${code}`, { duration: 10000 });
             setShowSmsVerification(true);
             return;
         }
@@ -109,9 +127,9 @@ const Login = () => {
         e.preventDefault();
         if (smsCode === expectedSmsCode) {
             await doLogin();
-            alert('¡Cuenta verificada!\nHas desbloqueado un cupón de bienvenida del 10% de descuento para automático tu primer pedido.');
+            toast.success('¡Cuenta verificada! Has desbloqueado un cupón de bienvenida del 10% de descuento.');
         } else {
-            alert('Código SMS incorrecto. Por favor, inténtalo de nuevo.');
+            toast.error('Código SMS incorrecto. Por favor, inténtalo de nuevo.');
         }
     };
 
@@ -119,7 +137,7 @@ const Login = () => {
         return (
             <div className="min-h-screen bg-surface-base flex items-center justify-center p-6 text-white relative overflow-hidden">
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-primary/10 rounded-full blur-[100px]"></div>
-                <div className="w-full max-w-md bg-surface-container/80 backdrop-blur-xl p-10 rounded-3xl border border-white/10 shadow-2xl relative z-10 animate-in zoom-in-95 duration-500">
+                <div className="w-full max-w-md bg-surface-container/80 backdrop-blur-xl p-10 rounded-3xl border border-white/10 shadow-2xl relative z-10 animate-in zoom-in-95 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                     <div className="text-center mb-10">
                         <Phone className="w-16 h-16 mx-auto mb-4 text-brand-primary opacity-80" />
                         <h1 className="text-3xl font-display font-black tracking-tight mb-2">Verifica tu Tlf</h1>
@@ -133,7 +151,7 @@ const Login = () => {
                                 type="text" 
                                 value={smsCode}
                                 onChange={e => setSmsCode(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-4 text-center text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary transition-all font-medium tracking-[0.5em] text-2xl"
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-4 text-center text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium tracking-[0.5em] text-2xl"
                                 placeholder="000000"
                                 maxLength={6}
                                 required
@@ -143,7 +161,7 @@ const Login = () => {
                         <button 
                             type="submit" 
                             disabled={loading}
-                            className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_30px_rgba(255,228,175,0.2)] disabled:opacity-50 disabled:hover:scale-100"
+                            className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_0_30px_rgba(255,228,175,0.2)] disabled:opacity-50 disabled:hover:scale-100"
                         >
                             {loading ? 'Verificando...' : 'Confirmar Código'}
                         </button>
@@ -152,7 +170,7 @@ const Login = () => {
                             <button 
                                 type="button" 
                                 onClick={() => setShowSmsVerification(false)} 
-                                className="text-xs text-gray-400 hover:text-white font-bold transition-colors"
+                                className="text-xs text-gray-400 hover:text-white font-bold transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]"
                             >
                                 Cambiar número de teléfono
                             </button>
@@ -168,7 +186,7 @@ const Login = () => {
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-primary/10 rounded-full blur-[100px]"></div>
             <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-secondary/10 rounded-full blur-[100px]"></div>
             
-            <div className="w-full max-w-md bg-surface-container/80 backdrop-blur-xl p-10 rounded-3xl border border-white/10 shadow-2xl relative z-10 animate-in zoom-in-95 duration-500">
+            <div className="w-full max-w-md bg-surface-container/80 backdrop-blur-xl p-10 rounded-3xl border border-white/10 shadow-2xl relative z-10 animate-in zoom-in-95 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                 <div className="text-center mb-10">
                     <svg viewBox="0 0 200 150" className="w-24 h-16 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg">
                         <path d="M 20 120 A 80 80 0 0 1 180 120" fill="none" stroke="#2563eb" strokeWidth="8" strokeLinecap="round"/>
@@ -195,7 +213,7 @@ const Login = () => {
                                 type="tel" 
                                 value={phone}
                                 onChange={e => setPhone(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary transition-all font-medium"
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium"
                                 placeholder="600 000 000"
                                 required
                             />
@@ -203,14 +221,14 @@ const Login = () => {
                     </div>
                     
                     {isNewUser && (
-                        <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                        <div className="space-y-4 animate-in slide-in-from-top-2 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="space-y-2">
                                 <label className="text-xs font-bold uppercase tracking-widest text-brand-yellow ml-2">Nombre Completo</label>
                                 <input 
                                     type="text" 
                                     value={name}
                                     onChange={e => setName(e.target.value)}
-                                    className="w-full bg-black/40 border border-brand-yellow/30 rounded-2xl py-4 px-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-yellow transition-all font-medium"
+                                    className="w-full bg-black/40 border border-brand-yellow/30 rounded-2xl py-4 px-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-yellow transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium"
                                     placeholder="Tu nombre (nuevo usuario)"
                                     required={isNewUser}
                                 />
@@ -221,7 +239,7 @@ const Login = () => {
                                     type="text" 
                                     value={address}
                                     onChange={e => setAddress(e.target.value)}
-                                    className="w-full bg-black/40 border border-brand-yellow/30 rounded-2xl py-4 px-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-yellow transition-all font-medium"
+                                    className="w-full bg-black/40 border border-brand-yellow/30 rounded-2xl py-4 px-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-yellow transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium"
                                     placeholder="Calle, Número..."
                                 />
                             </div>
@@ -235,7 +253,7 @@ const Login = () => {
                                 type="password" 
                                 value={pin}
                                 onChange={e => setPin(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-4 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary transition-all font-medium tracking-[0.2em]"
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-4 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium tracking-[0.2em]"
                                 placeholder="••••"
                                 maxLength={4}
                                 required
@@ -247,13 +265,13 @@ const Login = () => {
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_30px_rgba(255,228,175,0.2)] disabled:opacity-50 disabled:hover:scale-100"
+                        className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_0_30px_rgba(255,228,175,0.2)] disabled:opacity-50 disabled:hover:scale-100"
                     >
                         {loading ? 'Accediendo...' : (isNewUser ? 'Crear Cuenta y Entrar' : 'Entrar')}
                     </button>
                     
                     <div className="flex flex-col gap-2 mt-6 border-t border-white/5 pt-4">
-                        <button type="button" onClick={() => navigate('/')} className="text-xs text-gray-400 hover:text-white font-bold transition-colors mb-2">
+                        <button type="button" onClick={() => navigate('/')} className="text-xs text-gray-400 hover:text-white font-bold transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] mb-2">
                             ← Volver al Menú sin registro
                         </button>
                         <p className="text-[10px] text-center text-gray-400 font-bold uppercase tracking-wider">Cuentas de prueba:</p>
@@ -297,12 +315,12 @@ const StarRating = ({
                 e.stopPropagation();
                 onRate(star);
               }}
-              className="focus:outline-none transition-transform hover:scale-125"
+              className="focus:outline-none transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-125"
             >
               <Star
                 size={16}
                 className={cn(
-                  "transition-colors",
+                  "transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]",
                   isFilled ? "fill-brand-yellow text-brand-yellow" : "text-gray-600 hover:text-gray-400"
                 )}
               />
@@ -336,7 +354,7 @@ const AllergyIcons = ({ info }: { info: string }) => {
   return (
     <div className="flex gap-1.5 items-center bg-white/5 py-1 px-2 rounded-lg border border-white/10" title={info}>
       {tags.map((t, i) => (
-        <t.Icon key={i} size={14} className="text-gray-400 hover:text-brand-yellow transition-colors cursor-help" />
+        <t.Icon key={i} size={14} className="text-gray-400 hover:text-brand-yellow transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-help" />
       ))}
     </div>
   );
@@ -350,7 +368,8 @@ const MenuItemCard = ({
   rateMenuItem, 
   handleAddToCart, 
   addedItem, 
-  badges 
+  badges,
+  viewMode = 'card'
 }: any) => {
   const ref = React.useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
@@ -360,70 +379,107 @@ const MenuItemCard = ({
     <div 
       ref={ref}
       onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)}
-      className="bg-surface-container rounded-3xl overflow-hidden border border-white/5 hover:border-brand-primary/50 transition-all duration-300 ease-out group flex flex-col cursor-pointer hover:shadow-[0_8px_30px_rgba(249,206,29,0.12)] hover:-translate-y-1 hover:scale-[1.02]"
+      className={cn(
+        "bg-surface-container overflow-hidden border border-white/5 hover:border-brand-primary/30 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] group cursor-pointer active:scale-[0.98] hover:bg-surface-container-high shadow-2xl",
+        viewMode === 'list' ? 'flex flex-row items-center p-3 gap-4 rounded-3xl relative' : 'flex flex-col rounded-3xl'
+      )}
     >
-      <div className="h-48 bg-black relative overflow-hidden">
+      <div className={cn("bg-surface-container-high relative overflow-hidden shrink-0", viewMode === 'list' ? "w-24 h-24 rounded-2xl" : "h-48")}>
          {item.image ? (
             <motion.img 
-              style={{ y }}
+              style={viewMode === 'list' ? {} : { y }}
               src={item.image} 
               alt={item.name} 
-              className="w-full h-[120%] object-cover opacity-90 group-hover:scale-105 group-hover:opacity-100 transition-all duration-700 absolute top-[-10%] left-0 right-0" 
+              className={cn("w-full object-cover transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] menu-item-image", viewMode === 'list' ? "h-full group-hover:scale-110" : "h-[120%] opacity-90 group-hover:scale-105 group-hover:opacity-100 absolute top-[-10%] left-0 right-0")} 
             />
          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center text-gray-600 bg-surface-container-high pattern-diagonal-lines pattern-white/5 pattern-size-4">
-               <span className="text-xs font-display font-black uppercase tracking-widest opacity-50">Mamma Mia!</span>
+            <div className="w-full h-full flex flex-col items-center justify-center text-gray-700 bg-surface-container pattern-diagonal-lines pattern-white/5 pattern-size-4 opacity-50">
+               <span className="text-[10px] sm:text-xs font-display font-black uppercase tracking-widest text-center px-1">Mamma Mia!</span>
             </div>
          )}
          
-         <button 
-           onClick={(e) => {
-             e.stopPropagation();
-             updateMenuItem(item.id, { ...item, isPopular: !item.isPopular });
-           }}
-           className={cn(
-             "absolute top-4 right-4 p-2.5 rounded-full border shadow-xl flex items-center gap-1 transition-all",
-             item.isPopular ? "bg-brand-red text-white border-brand-red" : "bg-black/40 text-gray-400 border-white/10 hover:bg-black/80 hover:text-white"
-           )}
-         >
-           <Star size={14} fill={item.isPopular ? "currentColor" : "none"} />
-         </button>
+         <div className="absolute inset-0 bg-gradient-to-t from-surface-base via-transparent to-transparent opacity-80" />
+         
+         {viewMode !== 'list' && (
+           <button 
+             onClick={(e) => {
+               e.stopPropagation();
+               updateMenuItem(item.id, { ...item, isPopular: !item.isPopular });
+             }}
+             className={cn(
+               "absolute top-4 right-4 p-2.5 rounded-full backdrop-blur-md flex items-center gap-1 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] z-10",
+               item.isPopular ? "bg-brand-red/90 text-white border border-brand-red shadow-[0_0_15px_rgba(229,37,33,0.5)]" : "bg-black/40 text-gray-400 border border-white/10 hover:bg-black/80 hover:text-white"
+             )}
+           >
+             <Star size={14} fill={item.isPopular ? "currentColor" : "none"} />
+           </button>
+         )}
       </div>
       
-      <div className="p-5 flex-1 flex flex-col relative z-20 bg-surface-container">
-          <div className="flex justify-between items-start mb-1 gap-4">
-            <h4 className="text-lg font-display font-bold text-white group-hover:text-brand-primary transition-colors leading-tight">{item.name}</h4>
-          </div>
-          <p className="text-xs text-gray-400 font-sans mb-3 flex-1 leading-relaxed line-clamp-2">
-            {item.description}
-          </p>
-          <div className="flex justify-between items-center mb-4">
-             <span className="text-lg font-display font-bold text-brand-primary">€{item.price.toFixed(2)}</span>
-             <div className="flex flex-col items-end gap-2 shrink-0">
-                <AllergyIcons info={item.allergy_info} />
+      <div className={cn("flex-1 flex px-5 pb-5 pt-3", viewMode === 'list' ? "flex-row items-center p-0 min-w-0 pr-2" : "flex-col relative z-20")}>
+          <div className={cn(viewMode === 'list' ? "flex-1 min-w-0 pr-4 flex flex-col justify-center h-full" : "")}>
+             <div className={cn("flex justify-between items-baseline mb-2 gap-4", viewMode === 'list' ? "flex-col items-start gap-1 mb-1" : "")}>
+               <h4 className={cn("font-display font-bold text-white group-hover:text-brand-primary transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] leading-tight tracking-tight uppercase", viewMode === 'list' ? "text-base truncate w-full" : "text-lg")}>
+                   {item.name}
+                   {viewMode === 'list' && Boolean(item.isPopular) && <span className="ml-2 text-[10px] text-brand-primary tracking-widest uppercase inline-block font-sans">Premium 🔥</span>}
+               </h4>
+               {viewMode !== 'list' && <span className="text-xl font-display font-black text-brand-primary shrink-0">€{item.price.toFixed(2)}</span>}
+             </div>
+             
+             {viewMode !== 'list' && (
+                 <p className="text-xs text-gray-400 font-sans mb-4 flex-1 leading-relaxed line-clamp-3 uppercase tracking-wider font-medium">
+                   {item.description}
+                 </p>
+             )}
+             {viewMode === 'list' && item.description && (
+                 <p className="text-[10px] text-gray-500 font-sans truncate pr-4 leading-relaxed uppercase tracking-wider font-medium">
+                   {item.description}
+                 </p>
+             )}
+             
+             <div className={cn("flex justify-start items-center", viewMode === 'list' ? "mt-2" : "mb-4")}>
+                <div className="flex flex-col items-start gap-2 shrink-0">
+                   <AllergyIcons info={item.allergy_info} />
+                </div>
              </div>
           </div>
           
-          {selectedItem?.id === item.id && (
-            <div className="mb-6 space-y-4 animate-in fade-in zoom-in-95 duration-300">
+          {viewMode === 'list' && (
+             <div className="flex items-center gap-4 pl-2 shrink-0 h-full">
+                <span className="text-base font-display font-black text-brand-primary w-12 text-right">€{item.price.toFixed(2)}</span>
+                <button
+                    onClick={(e) => handleAddToCart(e, item)}
+                    className="w-12 h-12 bg-white/5 hover:bg-brand-primary text-gray-400 hover:text-black rounded-full flex items-center justify-center transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-90 border border-white/10 shrink-0"
+                >
+                    {addedItem === item.id ? (
+                        <Check size={18} className="text-green-500 stroke-[3px]" />
+                    ) : (
+                        <Plus size={20} strokeWidth={2.5} />
+                    )}
+                </button>
+             </div>
+          )}
+          
+          {selectedItem?.id === item.id && viewMode !== 'list' && (
+            <div className="mb-6 space-y-4 animate-in fade-in zoom-in-95 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
               {item.allergy_info && (
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                   <h5 className="font-mono text-gray-400 uppercase tracking-widest text-[10px] mb-2 text-white">Allergy Info</h5>
-                   <p className="text-xs text-gray-300">{item.allergy_info}</p>
+                <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                   <h5 className="font-sans font-bold text-brand-yellow uppercase tracking-[0.2em] text-[10px] mb-2">Allergy Info</h5>
+                   <p className="text-xs text-gray-300 uppercase tracking-wider">{item.allergy_info}</p>
                 </div>
               )}
               {item.recipe && (item.recipe.ingredients.length > 0 || item.recipe.steps.length > 0) && (
-                <div className="bg-surface-container-high rounded-2xl border border-white/10 p-4">
-                   <h5 className="font-mono text-white uppercase tracking-widest text-[10px] mb-3 flex items-center gap-2">
+                <div className="bg-surface-container-high rounded-xl border border-white/5 p-4">
+                   <h5 className="font-sans font-bold text-white uppercase tracking-[0.2em] text-[10px] mb-3 flex items-center gap-2">
                      <UtensilsCrossed size={12} />
                      Recipe Details
                    </h5>
                    {item.recipe.ingredients.length > 0 && (
                      <div className="mb-4">
-                       <h6 className="text-[10px] uppercase font-bold text-gray-400 mb-2">Ingredients</h6>
+                       <h6 className="text-[10px] uppercase font-bold text-gray-500 mb-2">Ingredients</h6>
                        <div className="flex flex-wrap gap-2">
                          {item.recipe.ingredients.map((ing: string, i: number) => (
-                           <span key={i} className="text-xs bg-white/5 text-gray-300 px-2 py-1 rounded">
+                           <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-300 px-3 py-1.5 rounded-full uppercase tracking-wider">
                              {ing}
                            </span>
                          ))}
@@ -432,12 +488,12 @@ const MenuItemCard = ({
                    )}
                    {item.recipe.steps.length > 0 && (
                      <div>
-                       <h6 className="text-[10px] uppercase font-bold text-gray-400 mb-2">Preparation</h6>
-                       <ol className="space-y-2">
+                       <h6 className="text-[10px] uppercase font-bold text-gray-500 mb-2">Preparation</h6>
+                       <ol className="space-y-3">
                          {item.recipe.steps.map((step: string, i: number) => (
-                           <li key={i} className="text-xs text-gray-300 flex gap-2">
-                             <span className="text-white font-bold shrink-0">{i + 1}.</span>
-                             <span>{step}</span>
+                           <li key={i} className="text-xs text-gray-300 flex gap-3 uppercase tracking-wider">
+                             <span className="text-brand-primary font-black shrink-0">{i + 1}.</span>
+                             <span className="leading-relaxed">{step}</span>
                            </li>
                          ))}
                        </ol>
@@ -448,6 +504,7 @@ const MenuItemCard = ({
             </div>
           )}
           
+          {viewMode !== 'list' && (
           <div className="flex justify-between items-end mt-auto border-t border-white/5 pt-5">
             <div className="flex flex-wrap gap-2 max-w-[70%]">
               <span className="text-[10px] font-mono uppercase bg-white/5 px-2 py-1 rounded text-gray-400">
@@ -476,15 +533,16 @@ const MenuItemCard = ({
                 onClick={(e) => handleAddToCart(e, item)}
                 title="Añadir al pedido"
                 className={cn(
-                  "h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center transition-all duration-300 border relative z-10",
+                  "h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center transition-colors duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] border relative z-10 active:scale-[0.97]",
                   addedItem === item.id 
                     ? "bg-white text-black border-white scale-105" 
-                    : "bg-transparent text-gray-400 hover:text-white border-white/20 hover:border-white hover:bg-white/10 active:scale-95"
+                    : "bg-transparent text-gray-400 hover:text-white border-white/20 hover:border-white hover:bg-white/10 active:scale-[0.97]"
                 )}>
                 {addedItem === item.id ? <Check size={18} /> : <ShoppingCart size={18} />}
               </button>
             </div>
           </div>
+          )}
       </div>
     </div>
   );
@@ -562,7 +620,7 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
+            transition={{ type: "spring", duration: 0.4, bounce: 0.15 }}
             className="absolute bottom-20 right-0 w-[350px] shadow-2xl rounded-2xl overflow-hidden bg-surface-container border border-white/10 flex flex-col"
           >
             <div className="bg-brand-primary p-4 text-black flex items-center justify-between">
@@ -595,9 +653,9 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="bg-white/10 text-white rounded-xl rounded-bl-none px-4 py-2 text-sm flex gap-1 items-center h-9">
-                    <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.5 }} className="w-1.5 h-1.5 bg-white rounded-full" />
-                    <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }} className="w-1.5 h-1.5 bg-white rounded-full" />
-                    <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }} className="w-1.5 h-1.5 bg-white rounded-full" />
+                    <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.8 }} className="w-1.5 h-1.5 bg-white rounded-full" />
+                    <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.8, delay: 0.2 }} className="w-1.5 h-1.5 bg-white rounded-full" />
+                    <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.8, delay: 0.4 }} className="w-1.5 h-1.5 bg-white rounded-full" />
                   </div>
                 </div>
               )}
@@ -617,7 +675,7 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
                  <button 
                    onClick={handleSend}
                    disabled={isLoading || !input.trim()}
-                   className="bg-brand-primary text-black p-2.5 rounded-xl hover:bg-brand-yellow disabled:opacity-50 transition-colors"
+                   className="bg-brand-primary text-black p-2.5 rounded-xl hover:bg-brand-yellow disabled:opacity-50 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
                  >
                    <Send className="w-4 h-4" />
                  </button>
@@ -628,7 +686,7 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
       </AnimatePresence>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-16 h-16 bg-brand-primary text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,228,175,0.4)] hover:scale-110 active:scale-95 transition-all"
+        className="w-16 h-16 bg-brand-primary text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,228,175,0.4)] hover:scale-110 active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]"
       >
         <MessageSquare className="w-7 h-7" />
       </button>
@@ -643,14 +701,34 @@ const Menu = () => {
   const [addedItem, setAddedItem] = React.useState<string | null>(null);
   const [selectedItem, setSelectedItem] = React.useState<any>(null);
   const [badges, setBadges] = React.useState<{id: number, itemId: string}[]>([]);
-  const [toastMessage, setToastMessage] = React.useState<string | null>(null);
   const [activeCategory, setActiveCategory] = React.useState<string>('TODAS');
   const [searchTerm, setSearchTerm] = React.useState('');
   const [sortByPopular, setSortByPopular] = React.useState(false);
   const [activeDietFilters, setActiveDietFilters] = React.useState<string[]>([]);
+  const [comboModalItem, setComboModalItem] = React.useState<any>(null);
+  const [viewMode, setViewMode] = React.useState<'card' | 'list'>('card');
+
+  const handleConfirmCombo = (item: any, notes: string, additionalCost: number) => {
+    const comboItem = {
+      ...item,
+      id: item.id + '-' + Date.now(),
+      price: item.price + additionalCost
+    };
+    addToCart(comboItem, 1, notes);
+    setAddedItem(item.id);
+    const badgeId = Date.now();
+    setBadges(prev => [...prev, { id: badgeId, itemId: item.id }]);
+    setTimeout(() => { setBadges(prev => prev.filter(b => b.id !== badgeId)); }, 1000);
+    toast.success(`¡Menú especial añadido al pedido!`, { icon: '🍕', position: 'top-center' });
+    setTimeout(() => { setAddedItem(null); }, 2000);
+  };
   
   const handleAddToCart = (e: React.MouseEvent, item: any) => {
     e.stopPropagation();
+    if (item.category === 'Menús Especiales') {
+      setComboModalItem(item);
+      return;
+    }
     addToCart(item);
     setAddedItem(item.id);
     
@@ -660,64 +738,140 @@ const Menu = () => {
       setBadges(prev => prev.filter(b => b.id !== badgeId));
     }, 1000);
     
-    setToastMessage(`¡${item.name} añadido al pedido!`);
+    toast.success(`¡${item.name} añadido al pedido!`, {
+      icon: '🍕',
+      position: 'top-center'
+    });
 
     setTimeout(() => {
         setAddedItem(null);
-        setToastMessage(null);
     }, 2000); // clear after 2s
   };
 
   return (
-  <div className="space-y-12 relative w-full">
-    <div className="relative rounded-[2rem] overflow-hidden h-[24rem] md:h-[32rem] border border-white/5 group bg-surface-container flex items-center shadow-2xl">
-      <div className="absolute inset-0 bg-gradient-to-r from-surface-container via-surface-container/60 to-transparent z-10 p-8 md:p-16 flex flex-col justify-center w-full md:w-2/3 lg:w-1/2">
-        <h3 className="text-xs font-mono text-brand-blue uppercase tracking-[0.3em] font-semibold mb-4">LA NOSTRA PIZZA</h3>
-        <h2 className="text-5xl md:text-7xl font-display text-brand-primary font-black mb-6 tracking-tighter leading-[1.1]">
-          Mamma Mia!
-        </h2>
-        <p className="text-sm md:text-base text-gray-400 font-bold leading-relaxed max-w-sm mb-8">
-          Auténtica pizza, hamburguesas brutales y los mejores entrantes. Descubre el sabor de Nules.
-        </p>
-        <div className="flex items-center gap-4">
-          <button onClick={() => window.scrollTo({top: 500, behavior: 'smooth'})} className="px-6 py-3 bg-white text-black font-semibold rounded-full text-sm hover:bg-gray-200 transition-colors shadow-lg shadow-white/10">
-            View Menu
-          </button>
-        </div>
-      </div>
-      <div className="absolute right-0 top-0 bottom-0 w-full md:w-2/3 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-l from-transparent via-surface-container/40 to-surface-container z-10" />
-        <img 
-          src="https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974&auto=format&fit=crop" 
-          className="w-full h-full object-cover opacity-50 contrast-125 saturate-50 group-hover:scale-105 transition-transform duration-[2s] ease-out" 
-          alt="Refined culinary presentation" 
+  <div className="space-y-12 relative w-full overflow-hidden">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="relative rounded-[2.5rem] overflow-hidden h-[28rem] md:h-[36rem] border border-white/10 group bg-surface-base flex items-center shadow-2xl"
+    >
+      {/* Background Image full coverage */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <motion.img 
+          initial={{ scale: 1.05 }}
+          animate={{ 
+            scale: [1.05, 1.12, 1.05],
+            x: [0, -10, 0],
+            y: [0, 5, 0],
+            filter: ["brightness(1) contrast(1.25)", "brightness(1.1) contrast(1.3)", "brightness(1) contrast(1.25)"]
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          src={hasValidKey ? `https://maps.googleapis.com/maps/api/streetview?location=Carretera+Vilavella+55,+12520+Nules,+Castellon,+Spain&size=1920x1080&key=${API_KEY}` : "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGJbLKxU7sWhi13N11GaeRyCYiqaLWi4BPJyNoaNYoyUA6LBvHF2yPWBCR6sInrWDBlcxjegGk2MmROC_98n8EqDhZcFIRmc5_Crb8rtbbiZALG6nTU0_jogMCToYc90QUecjjS1y9tm1WV=s680-w680-h510-rw"} 
+          className="w-[110%] h-[110%] -ml-[5%] -mt-[5%] object-cover opacity-60 saturate-50" 
+          alt="Mamma Mia Nules" 
+        />
+        {/* Softening overlays */}
+        <div className="absolute inset-0 bg-gradient-to-r from-surface-base via-surface-base/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-container/90 via-transparent to-transparent" />
+        {/* Animated Glow map outline simulation */}
+        <motion.div 
+           animate={{ opacity: [0.1, 0.2, 0.1] }}
+           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+           className="absolute inset-0 bg-brand-primary mix-blend-overlay" 
         />
       </div>
-    </div>
+
+      {/* Content overlay */}
+      <div className="relative z-10 p-6 md:p-16 flex flex-col justify-center items-center w-full max-w-3xl text-center mx-auto mt-4 md:mt-0">
+        <motion.div
+           initial={{ opacity: 0, x: -20 }}
+           animate={{ opacity: 1, x: 0 }}
+           transition={{ duration: 0.6, delay: 0.2 }}
+           className="inline-flex items-center gap-3 mb-4 mx-auto w-full justify-center"
+        >
+          <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse shadow-[0_0_10px_rgba(255,193,7,0.8)]" />
+          <h3 className="text-[10px] md:text-xs font-sans text-brand-primary uppercase tracking-[0.3em] font-black break-words">Nules, Castellón</h3>
+        </motion.div>
+
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex gap-2 mb-2 w-full justify-center"
+        >
+            <div className="w-16 h-2 bg-brand-red rounded-full shadow-[0_0_15px_rgba(229,37,33,0.8)]"></div>
+            <div className="w-16 h-2 bg-brand-blue rounded-full shadow-[0_0_15px_rgba(0,80,160,0.8)]"></div>
+        </motion.div>
+
+        <motion.h4
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.35 }}
+            className="text-white font-sans font-black uppercase tracking-[0.2em] mb-1 text-sm md:text-lg shrink w-full overflow-hidden text-ellipsis"
+        >
+            LA NOSTRA PIZZA
+        </motion.h4>
+
+        <motion.h2 
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.6, delay: 0.4 }}
+           className="text-5xl sm:text-6xl md:text-8xl font-display text-brand-primary font-black mb-6 tracking-tight leading-[1] uppercase w-full break-words"
+           style={{ textShadow: '0 4px 30px rgba(255, 193, 7, 0.4)' }}
+        >
+          MAMMA MIA!
+        </motion.h2>
+
+        <motion.p 
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.6, delay: 0.6 }}
+           className="text-lg md:text-xl text-gray-300 font-medium leading-relaxed max-w-lg mb-8"
+        >
+          Auténtica pizza y hamburguesas brutales. Ven a descubrir el verdadero sabor de Nules, te esperamos.
+        </motion.p>
+        
+        <motion.div 
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.6, delay: 0.8 }}
+           className="flex items-center gap-4"
+        >
+          <button 
+             onClick={() => window.scrollTo({top: 600, behavior: 'smooth'})} 
+             className="px-8 py-4 bg-brand-primary text-black font-black uppercase tracking-widest rounded-2xl text-sm hover:scale-105 active:scale-95 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-xl shadow-brand-primary/20"
+          >
+            Ver Carta
+          </button>
+        </motion.div>
+      </div>
+    </motion.div>
 
     {/* Search Input & Controls */}
-    <div className="relative max-w-3xl mx-auto -mt-6 z-20 flex flex-col gap-6 items-center">
-       <div className="relative w-full">
+    <div className="relative w-full max-w-2xl mx-auto -mt-8 z-20 flex flex-col gap-6 items-center">
+       <div className="relative w-full group">
+         <div className="absolute -inset-1 bg-gradient-to-r from-brand-primary to-brand-red opacity-20 blur-xl group-hover:opacity-40 transition duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-full" />
          <input 
             type="text"
-            placeholder="Buscar en la carta..."
+            placeholder="Buscar en la carta (ej. Peperoni, Queso)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-surface-base border border-brand-primary text-white rounded-full py-4 pl-14 pr-4 shadow-[0_10px_40px_rgba(0,0,0,0.5)] focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-500 font-bold transition-all text-lg"
+            className="relative w-full bg-surface-container-high/90 backdrop-blur-md border border-white/10 text-white rounded-full py-4 pl-14 pr-4 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary placeholder-gray-500 font-medium transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] text-lg shadow-[0_8px_32px_rgba(0,0,0,0.8)]"
          />
-         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-brand-primary">
+         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-primary transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
             <Pizza size={24} />
          </span>
        </div>
        
-       <div className="flex gap-3 overflow-x-auto w-full pb-2 hide-scrollbar snap-x px-2 max-w-full">
+       <div className="flex gap-4 overflow-x-auto w-full pb-4 hide-scrollbar snap-x px-2 max-w-full">
           <button
               onClick={() => setActiveCategory('TODAS')}
               className={cn(
-                  "snap-center shrink-0 px-6 py-2.5 rounded-full font-bold text-sm tracking-wider uppercase transition-all whitespace-nowrap",
+                  "snap-center shrink-0 px-6 py-3 rounded-full font-black text-xs tracking-[0.2em] uppercase transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap border-2",
                   activeCategory === 'TODAS' 
-                      ? "bg-brand-primary text-surface-base" 
-                      : "bg-surface-container text-white hover:bg-surface-container-high border border-white/5"
+                      ? "bg-brand-primary border-brand-primary text-black shadow-[0_0_20px_rgba(255,193,7,0.4)]" 
+                      : "bg-surface-base border-white/10 text-gray-400 hover:border-brand-primary/50 hover:text-brand-primary"
               )}
           >
               Todas
@@ -727,10 +881,10 @@ const Menu = () => {
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
                   className={cn(
-                      "snap-center shrink-0 px-6 py-2.5 rounded-full font-bold text-sm tracking-wider uppercase transition-all whitespace-nowrap",
+                      "snap-center shrink-0 px-6 py-3 rounded-full font-black text-xs tracking-[0.2em] uppercase transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap border-2",
                       activeCategory === cat 
-                          ? "bg-brand-primary text-surface-base" 
-                          : "bg-surface-container text-white hover:bg-surface-container-high border border-white/5"
+                          ? "bg-brand-primary border-brand-primary text-black shadow-[0_0_20px_rgba(255,193,7,0.4)]" 
+                          : "bg-surface-base border-white/10 text-gray-400 hover:border-brand-primary/50 hover:text-brand-primary"
                   )}
               >
                   {cat}
@@ -753,7 +907,7 @@ const Menu = () => {
                     : [...prev, filter]
                 );
              }}
-             className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border transition-all duration-300 flex items-center gap-2 ${
+             className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] flex items-center gap-2 ${
                isActive 
                  ? 'bg-brand-secondary border-brand-secondary text-black shadow-[0_0_20px_rgba(255,165,0,0.3)]' 
                  : 'bg-surface-container border-white/20 text-gray-400 hover:border-brand-primary/50'
@@ -766,6 +920,26 @@ const Menu = () => {
            </button>
          );
       })}
+    </div>
+
+    {/* View Mode Toggle */}
+    <div className="max-w-3xl mx-auto flex justify-center mt-6">
+        <div className="bg-surface-container/60 border border-white/10 rounded-2xl flex p-1 backdrop-blur-md">
+            <button
+                onClick={() => setViewMode('card')}
+                className={`p-3 rounded-xl transition-all ${viewMode === 'card' ? 'bg-brand-primary text-black scale-105 shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                title="Vista Tarjetas"
+            >
+                <LayoutGrid size={20} />
+            </button>
+            <button
+                onClick={() => setViewMode('list')}
+                className={`p-3 rounded-xl transition-all ${viewMode === 'list' ? 'bg-brand-primary text-black scale-105 shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                title="Vista Lista"
+            >
+                <List size={20} />
+            </button>
+        </div>
     </div>
 
     {categories.map(category => {
@@ -808,16 +982,15 @@ const Menu = () => {
       return (
         <section key={category} className="scroll-m-24" id={category.replace(/\s+/g, '-').toLowerCase()}>
           {activeCategory === 'TODAS' && (
-              <h3 className="text-3xl font-black text-brand-primary border-b border-white/10 pb-4 mb-8 flex items-center gap-4">
-                <span className="bg-brand-red w-3 h-10 rounded-full inline-block"></span>
+              <h3 className="text-4xl md:text-5xl font-display font-black text-brand-primary mb-10 flex items-center justify-between uppercase tracking-tighter">
                 {category}
+                <div className="h-px bg-gradient-to-r from-brand-primary/50 to-transparent flex-1 ml-6 mt-2 hidden sm:block"></div>
               </h3>
           )}
           <motion.div 
-            className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6"
+            className={viewMode === 'list' ? "flex flex-col gap-3 md:gap-4" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6"}
             initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-50px" }}
+            animate="show"
             variants={{
               hidden: { opacity: 0 },
               show: {
@@ -845,6 +1018,7 @@ const Menu = () => {
                   handleAddToCart={handleAddToCart}
                   addedItem={addedItem}
                   badges={badges}
+                  viewMode={viewMode}
                 />
               </motion.div>
             ))}
@@ -887,20 +1061,6 @@ const Menu = () => {
        </div>
     )}
     <ChatWidget menuItems={menuItems} />
-    
-    <AnimatePresence>
-      {toastMessage && (
-         <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-brand-primary text-black px-6 py-3 rounded-full shadow-[0_10px_40px_rgba(249,206,29,0.3)] border border-white/20 flex items-center gap-3 whitespace-nowrap font-bold"
-         >
-            <Check size={18} className="text-black" />
-            {toastMessage}
-         </motion.div>
-      )}
-    </AnimatePresence>
 
     {/* Bottom Mobile Tab Bar (App-style) */}
     <div className="fixed bottom-0 left-0 right-0 z-[60] bg-surface-container-high/90 backdrop-blur-xl border-t border-white/10 pb-safe md:hidden">
@@ -909,7 +1069,7 @@ const Menu = () => {
                <Home size={24} className="stroke-[2px]" />
                <span className="text-[10px] font-black tracking-widest uppercase mt-1">Inicio</span>
             </button>
-            <button onClick={() => document.querySelector('input')?.focus()} className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-white transition-colors relative z-10 w-16 -ml-4">
+            <button onClick={() => document.querySelector('input')?.focus()} className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-white transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] relative z-10 w-16 -ml-4">
                <Search size={22} className="stroke-[2px]" />
                <span className="text-[10px] font-bold tracking-widest uppercase mt-1">Buscar</span>
             </button>
@@ -918,7 +1078,7 @@ const Menu = () => {
                <button 
                   onClick={() => navigate('/cart')} 
                   className={cn(
-                     "w-16 h-16 rounded-full bg-surface-container text-gray-400 shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex items-center justify-center relative transition-transform active:scale-95 border-4 border-surface-container-high",
+                     "w-16 h-16 rounded-full bg-surface-container text-gray-400 shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex items-center justify-center relative transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] border-4 border-surface-container-high",
                      cart.length > 0 ? "scale-110 bg-brand-blue text-white shadow-[0_8px_30px_rgba(29,112,184,0.4)]" : "hover:text-white"
                   )}
                >
@@ -931,17 +1091,24 @@ const Menu = () => {
                </button>
             </div>
             
-            <button className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-white transition-colors relative z-10 w-16 invisible" aria-hidden>
+            <button className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-white transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] relative z-10 w-16 invisible active:scale-[0.97]" aria-hidden>
                {/* Spacer for center button */}
             </button>
             
-            <button onClick={() => navigate('/profile')} className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-white transition-colors relative z-10 w-16 -mr-4">
+            <button onClick={() => navigate('/profile')} className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-white transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] relative z-10 w-16 -mr-4">
                <UserCircle size={22} className="stroke-[2px]" />
                <span className="text-[10px] font-bold tracking-widest uppercase mt-1">Perfil</span>
             </button>
          </div>
     </div>
     
+    <MenuSelectionModal 
+       isOpen={!!comboModalItem}
+       onClose={() => setComboModalItem(null)}
+       onConfirm={handleConfirmCombo}
+       baseItem={comboModalItem}
+     />
+
     <AnimatePresence>
       {cart.length > 0 && (
         <motion.div 
@@ -952,7 +1119,7 @@ const Menu = () => {
         >
            <button 
              onClick={() => navigate('/cart')} 
-             className="pointer-events-auto w-full max-w-[340px] bg-brand-primary text-[#1A1A1A] uppercase tracking-[0.2em] font-black py-4 rounded-full shadow-[0_10px_40px_rgba(249,206,29,0.3)] hover:scale-105 active:scale-95 transition-all text-center flex flex-col items-center justify-center border border-brand-primary/50"
+             className="pointer-events-auto w-full max-w-[340px] bg-brand-primary text-[#1A1A1A] uppercase tracking-[0.2em] font-black py-4 rounded-full shadow-[0_10px_40px_rgba(249,206,29,0.3)] hover:scale-105 active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] text-center flex flex-col items-center justify-center border border-brand-primary/50"
            >
              <span className="text-lg">PEDIR AHORA</span>
              <span className="text-[10px] opacity-75 mt-0.5 font-bold">({cart.length} productos)</span>
@@ -1048,23 +1215,23 @@ const Dashboard = () => {
       <div className="flex flex-wrap gap-3 items-center">
         {(role === 'JEFE' || role === 'ENCARGADO') && (
             <>
-              <button onClick={() => navigate('/admin')} className="flex items-center gap-2 bg-brand-blue hover:bg-brand-light-blue text-white transition-all px-5 py-2.5 rounded-2xl font-bold font-sans">
+              <button onClick={() => navigate('/admin')} className="flex items-center gap-2 bg-brand-blue hover:bg-brand-light-blue text-white transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] px-5 py-2.5 rounded-2xl font-bold font-sans">
                 <Settings size={18} />
                 <span className="text-sm">Admin PGLite</span>
               </button>
               <button 
                 onClick={() => setShowImporter(true)} 
-                className="flex items-center gap-2 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary transition-all px-5 py-2.5 rounded-2xl border border-brand-primary/20 hover:scale-105 active:scale-95 group font-bold font-sans shadow-lg"
+                className="flex items-center gap-2 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] px-5 py-2.5 rounded-2xl border border-brand-primary/20 hover:scale-105 active:scale-[0.97] group font-bold font-sans shadow-lg"
               >
-                <Users size={18} className="group-hover:scale-110 transition-transform" />
+                <Users size={18} className="group-hover:scale-110 transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]" />
                 <span className="text-sm">Importar CRM</span>
               </button>
             </>
         )}
-        <button onClick={() => navigate('/cliente')} className="flex items-center gap-2 bg-brand-primary hover:bg-brand-yellow text-black transition-all px-5 py-2.5 rounded-2xl font-bold font-sans shadow-lg hover:scale-105 active:scale-95">
+        <button onClick={() => navigate('/cliente')} className="flex items-center gap-2 bg-brand-primary hover:bg-brand-yellow text-black transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] px-5 py-2.5 rounded-2xl font-bold font-sans shadow-lg hover:scale-105 active:scale-[0.97]">
           <span className="text-sm">App Cliente</span>
         </button>
-        <button onClick={() => navigate('/tauleta')} className="flex items-center gap-2 bg-surface-container hover:bg-white/5 transition-all px-5 py-2.5 rounded-2xl border border-white/5 font-bold font-sans shadow-lg hover:scale-105 active:scale-95">
+        <button onClick={() => navigate('/tauleta')} className="flex items-center gap-2 bg-surface-container hover:bg-white/5 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] px-5 py-2.5 rounded-2xl border border-white/5 font-bold font-sans shadow-lg hover:scale-105 active:scale-[0.97]">
           <span className="text-sm text-gray-300">Tauleta UI</span>
         </button>
         <div className="flex items-center gap-3 bg-surface-container/50 px-5 py-2.5 rounded-2xl border border-white/5 backdrop-blur-md">
@@ -1091,8 +1258,8 @@ const Dashboard = () => {
     )}
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="bg-surface-container rounded-[2rem] p-8 border border-white/5 flex flex-col justify-between h-48 relative overflow-hidden group hover:border-brand-red/30 transition-colors shadow-xl">
-        <div className="absolute top-0 right-0 p-8 opacity-10 text-brand-red group-hover:scale-110 transition-transform duration-500 pointer-events-none">
+      <div className="bg-surface-container rounded-[2rem] p-8 border border-white/5 flex flex-col justify-between h-48 relative overflow-hidden group hover:border-brand-red/30 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-xl">
+        <div className="absolute top-0 right-0 p-8 opacity-10 text-brand-red group-hover:scale-110 transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-none">
           <Star size={100} />
         </div>
         <div className="flex justify-between items-start relative z-10">
@@ -1101,15 +1268,15 @@ const Dashboard = () => {
         </div>
         <div className="text-5xl font-display font-black text-white relative z-10 tracking-tight">€{revenue.toFixed(2)}</div>
       </div>
-      <div className="bg-surface-container rounded-[2rem] p-8 border border-white/5 flex flex-col justify-between h-48 relative overflow-hidden group hover:border-brand-yellow/30 transition-colors shadow-xl">
-        <div className="absolute top-0 right-0 p-8 opacity-10 text-brand-yellow group-hover:scale-110 transition-transform duration-500 pointer-events-none">
+      <div className="bg-surface-container rounded-[2rem] p-8 border border-white/5 flex flex-col justify-between h-48 relative overflow-hidden group hover:border-brand-yellow/30 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-xl">
+        <div className="absolute top-0 right-0 p-8 opacity-10 text-brand-yellow group-hover:scale-110 transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-none">
           <Package size={100} />
         </div>
         <h3 className="font-bold text-gray-400 uppercase tracking-[0.2em] text-xs relative z-10">Pedidos Activos</h3>
         <div className="text-5xl font-display font-black text-brand-yellow relative z-10">{activeOrders}</div>
       </div>
-      <div className="bg-surface-container rounded-[2rem] p-8 border border-white/5 flex flex-col justify-between h-48 relative overflow-hidden group hover:border-blue-500/30 transition-colors shadow-xl">
-        <div className="absolute top-0 right-0 p-8 opacity-10 text-blue-500 group-hover:scale-110 transition-transform duration-500 pointer-events-none">
+      <div className="bg-surface-container rounded-[2rem] p-8 border border-white/5 flex flex-col justify-between h-48 relative overflow-hidden group hover:border-blue-500/30 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-xl">
+        <div className="absolute top-0 right-0 p-8 opacity-10 text-blue-500 group-hover:scale-110 transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-none">
           <RotateCcw size={100} />
         </div>
         <h3 className="font-bold text-gray-400 uppercase tracking-[0.2em] text-xs relative z-10">Pendientes (Prep)</h3>
@@ -1186,18 +1353,7 @@ const Dashboard = () => {
                        }),
                        getPosition: (d: any) => d.position,
                        getWeight: (d: any) => d.weight,
-                       radiusPixels: 40,
-                       intensity: 2,
-                       threshold: 0.1,
-                       colorRange: [
-                         [25, 43, 102], // dark blue
-                         [52, 94, 219], // blue
-                         [46, 204, 113], // green
-                         [241, 196, 15], // yellow
-                         [230, 126, 34], // orange
-                         [231, 76, 60], // pink/red
-                         [192, 57, 43] // dark red
-                       ]
+                       radiusPixels: 40
                      })
                   ]}
                />
@@ -1220,53 +1376,58 @@ const Dashboard = () => {
             Stock Crítico
         </h3>
         <div className="space-y-4 relative z-10">
-          {[
-            { id: 1, name: 'Harina 00', stock: 12, unit: 'kg' },
-            { id: 2, name: 'Mozzarella', stock: 4, unit: 'kg' }
-          ].map(ing => (
-            <div key={ing.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-red-500/10 border border-brand-red/20 flex items-center justify-center text-brand-red">
-                  !
+          {lowStockItems.length > 0 ? (
+            lowStockItems.map(ing => (
+              <div key={ing.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white/5 rounded-2xl gap-4 border border-white/5 hover:border-brand-red/30 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-brand-red/10 border border-brand-red/20 flex items-center justify-center text-brand-red shrink-0 shadow-[0_0_15px_rgba(255,107,107,0.2)]">
+                    <AlertCircle size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white uppercase tracking-wider text-sm">{ing.name}</h4>
+                    <p className="text-xs text-brand-red font-medium uppercase tracking-widest mt-1">Stock: {ing.currentStock} {ing.unit} / Mínimo: {ing.minLevel} {ing.unit}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-white">{ing.name}</p>
-                  <p className="text-xs text-brand-red">Stock crítico: {ing.stock}{ing.unit} restantes</p>
-                </div>
+                <button 
+                  onClick={() => {
+                     const doc = new jsPDF();
+                     doc.setFontSize(22);
+                     doc.text('ORDEN DE COMPRA - MAMMA MIA!', 20, 20);
+                     doc.setFontSize(12);
+                     doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 30);
+                     doc.text('Proveedor: General', 20, 40);
+                     
+                     autoTable(doc, {
+                       startY: 50,
+                       head: [['Producto', 'Cantidad Solicitada', 'Notas']],
+                       body: [
+                         [ing.name, `${Math.max(ing.minLevel * 2, 10)} ${ing.unit}`, 'Reposición urgente de stock mínimo']
+                       ],
+                     });
+                     
+                     doc.save(`orden_compra_${ing.name.toLowerCase().replace(/ /g, '_')}.pdf`);
+                     toast.success(`Orden de compra de ${ing.name} generada`);
+                  }}
+                  className="w-full sm:w-auto text-xs font-bold text-brand-red uppercase border border-brand-red/30 px-5 py-2.5 rounded-xl hover:bg-brand-red hover:text-white transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  <Printer size={14} />
+                  <span>Descargar PDF</span>
+                </button>
               </div>
-              <button 
-                onClick={() => {
-                   const doc = new jsPDF();
-                   doc.setFontSize(22);
-                   doc.text('ORDEN DE COMPRA - MAMMA MIA!', 20, 20);
-                   doc.setFontSize(12);
-                   doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 30);
-                   doc.text('Proveedor: Varios', 20, 40);
-                   
-                   autoTable(doc, {
-                     startY: 50,
-                     head: [['Producto', 'Cantidad Solicitada', 'Notas']],
-                     body: [
-                       [ing.name, `50 ${ing.unit}`, 'Urgente']
-                     ],
-                   });
-                   
-                   doc.save(`orden_compra_${ing.name.toLowerCase().replace(/ /g, '_')}.pdf`);
-                }}
-                className="text-xs font-bold text-brand-red flex-shrink-0 uppercase border border-brand-red/30 px-3 py-1 rounded-full hover:bg-brand-red hover:text-white transition-all flex items-center gap-1"
-              >
-                <Printer size={12} />
-                Pedir PDF
-              </button>
+            ))
+          ) : (
+            <div className="text-center p-6 border border-white/5 rounded-2xl bg-white/5">
+                <Check size={32} className="text-green-400 mx-auto mb-3 opacity-50" />
+                <p className="font-bold text-gray-400">Stock Saludable</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
       <div className="bg-surface-container rounded-[2rem] p-8 md:p-10 border border-white/5 shadow-xl relative overflow-hidden">
         <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-brand-primary/5 to-transparent pointer-events-none"></div>
         <div className="flex justify-between items-start mb-6">
             <div>
-                 <h3 className="text-xl md:text-2xl font-display font-black text-white mb-2 tracking-tight">Ingresos Previstos</h3>
+                 <h3 className="text-xl md:text-2xl font-display font-black text-white mb-2 tracking-tight">Ingresos Semanales</h3>
                  <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Evolución de ventas</p>
             </div>
             <div className="flex bg-black/50 border border-white/10 rounded-xl p-1">
@@ -1275,7 +1436,7 @@ const Dashboard = () => {
                         key={days}
                         onClick={() => setDaysRange(days)}
                         className={cn(
-                            "px-4 py-1.5 text-xs font-bold uppercase tracking-widest rounded-lg transition-all",
+                            "px-4 py-1.5 text-xs font-bold uppercase tracking-widest rounded-lg transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]",
                             daysRange === days ? "bg-brand-primary text-black" : "text-gray-400 hover:text-white hover:bg-white/5"
                         )}
                     >
@@ -1311,7 +1472,7 @@ const Dashboard = () => {
         <div className="bg-surface-container w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl border-2 border-brand-primary/50 relative shadow-2xl p-8">
           <button 
             onClick={() => setShowImporter(false)}
-            className="absolute top-6 right-6 text-gray-400 hover:text-white bg-white/5 rounded-full p-2 hover:bg-white/10 transition-colors"
+            className="absolute top-6 right-6 text-gray-400 hover:text-white bg-white/5 rounded-full p-2 hover:bg-white/10 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]"
           >
             <X size={24} />
           </button>
@@ -1483,7 +1644,7 @@ const Inventory = () => {
         <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
           <button
             onClick={handleExportPDF}
-            className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg border border-white/10 hover:border-white/30"
+            className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-4 rounded-2xl flex items-center justify-center gap-2 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg border border-white/10 hover:border-white/30 active:scale-[0.97]"
           >
             <Printer size={18} />
             Exportar PDF
@@ -1491,7 +1652,7 @@ const Inventory = () => {
           
           <button
             onClick={handleGeneratePO}
-            className="w-full sm:w-auto bg-brand-red hover:bg-brand-red/80 text-white font-bold px-6 py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(255,107,107,0.4)] border border-brand-red"
+            className="w-full sm:w-auto bg-brand-red hover:bg-brand-red/80 text-white font-bold px-6 py-4 rounded-2xl flex items-center justify-center gap-2 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_0_15px_rgba(255,107,107,0.4)] border border-brand-red active:scale-[0.97]"
           >
             <ShoppingCart size={18} />
             Alerta Reabastecimiento
@@ -1500,7 +1661,7 @@ const Inventory = () => {
           {selectedItems.size > 0 ? (
             <button 
               onClick={openBulkModal}
-              className="w-full sm:w-auto bg-brand-primary text-black font-black px-8 py-4 rounded-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 slide-in-from-right-4 animate-in duration-300 shadow-[0_0_30px_rgba(225,184,70,0.3)]"
+              className="w-full sm:w-auto bg-brand-primary text-black font-black px-8 py-4 rounded-2xl hover:scale-105 active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] flex items-center justify-center gap-3 slide-in-from-right-4 animate-in duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_0_30px_rgba(225,184,70,0.3)]"
             >
               Ajuste Masivo ({selectedItems.size})
             </button>
@@ -1554,7 +1715,7 @@ const Inventory = () => {
                     type="checkbox" 
                     checked={selectedItems.size === inventory.length && inventory.length > 0}
                     onChange={handleSelectAll}
-                    className="accent-brand-primary w-4 h-4 cursor-pointer"
+                    className="accent-brand-primary w-4 h-4 cursor-pointer active:scale-[0.98]"
                   />
                 </th>
                 <th className="p-6">Producto</th>
@@ -1572,7 +1733,7 @@ const Inventory = () => {
                 const percent = Math.min(100, Math.max(0, (item.currentStock / maxBarStock) * 100));
 
                 return (
-                <tr key={item.id} className={cn("transition-colors group", isBelowMin ? "bg-red-500/10 hover:bg-red-500/20 shadow-[inset_2px_0_0_0_rgba(239,68,68,1)]" : "hover:bg-white/5")}>
+                <tr key={item.id} className={cn("transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] group", isBelowMin ? "bg-red-500/10 hover:bg-red-500/20 shadow-[inset_2px_0_0_0_rgba(239,68,68,1)]" : "hover:bg-white/5")}>
                   <td className="p-6 w-12 relative">
                     {isBelowMin && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-brand-red rounded-r-full animate-pulse" />
@@ -1581,7 +1742,7 @@ const Inventory = () => {
                       type="checkbox" 
                       checked={selectedItems.has(item.id)}
                       onChange={() => handleSelect(item.id)}
-                      className="accent-brand-primary w-4 h-4 cursor-pointer"
+                      className="accent-brand-primary w-4 h-4 cursor-pointer active:scale-[0.98]"
                     />
                   </td>
                   <td className="p-6">
@@ -1611,17 +1772,17 @@ const Inventory = () => {
                         <div className="flex items-center justify-end gap-3 bg-black/40 rounded-full py-1 px-1 border border-white/5">
                           <button 
                             onClick={() => updateInventoryStock(item.id, Math.max(0, item.currentStock - 1))}
-                            className="text-gray-500 hover:text-white bg-transparent outline-none w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+                            className="text-gray-500 hover:text-white bg-transparent outline-none w-8 h-8 flex items-center justify-center rounded-full transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]"
                           >-</button>
                           <span className={cn("text-xl font-display font-black w-10 text-center", isBelowMin ? "text-brand-red" : "text-white")}>{item.currentStock}</span>
                           <button 
                               onClick={() => updateInventoryStock(item.id, item.currentStock + 1)}
-                              className="text-gray-500 hover:text-brand-primary bg-transparent outline-none w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+                              className="text-gray-500 hover:text-brand-primary bg-transparent outline-none w-8 h-8 flex items-center justify-center rounded-full transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]"
                           >+</button>
                         </div>
                         <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden border border-white/5 mt-1">
                           <div 
-                            className={cn("h-full rounded-full transition-all duration-500", isBelowMin ? "bg-brand-red" : "bg-brand-primary")}
+                            className={cn("h-full rounded-full transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]", isBelowMin ? "bg-brand-red" : "bg-brand-primary")}
                             style={{ width: `${percent}%` }}
                           />
                         </div>
@@ -1635,8 +1796,8 @@ const Inventory = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-surface border border-white/10 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
+          <div className="bg-surface border border-white/10 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
             <div className="p-6 border-b border-white/10">
               <h3 className="text-2xl font-display font-black text-white">Ajuste Masivo de Stock</h3>
               <p className="text-gray-400 text-sm mt-1">Actualiza el stock de los ingredientes seleccionados simultáneamente.</p>
@@ -1654,7 +1815,7 @@ const Inventory = () => {
                         <input 
                            type="number" 
                            min="0"
-                           className="bg-black/50 border border-white/10 rounded-xl px-4 py-2 w-32 focus:border-brand-primary outline-none focus:ring-1 focus:ring-brand-primary transition-colors text-right"
+                           className="bg-black/50 border border-white/10 rounded-xl px-4 py-2 w-32 focus:border-brand-primary outline-none focus:ring-1 focus:ring-brand-primary transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] text-right"
                            value={adjustments[item.id] ?? item.currentStock}
                            onChange={(e) => {
                              const val = parseInt(e.target.value);
@@ -1670,13 +1831,13 @@ const Inventory = () => {
             <div className="p-6 border-t border-white/10 bg-surface flex justify-end gap-3">
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="px-6 py-3 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-colors"
+                className="px-6 py-3 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]"
               >
                 Cancelar
               </button>
               <button 
                 onClick={saveBulkAdjustments}
-                className="px-6 py-3 rounded-xl font-bold bg-brand-primary text-black hover:bg-brand-primary/90 transition-colors shadow-lg shadow-brand-primary/20"
+                className="px-6 py-3 rounded-xl font-bold bg-brand-primary text-black hover:bg-brand-primary/90 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg shadow-brand-primary/20 active:scale-[0.97]"
               >
                 Guardar Ajustes
               </button>
@@ -1714,7 +1875,7 @@ const OrderProgressBar = ({ status, type }: { status: string, type: string }) =>
           return (
              <div 
               key={step} 
-              className={cn("h-1.5 w-full transition-all duration-500", colorClass, isCurrent ? "opacity-100" : isCompleted ? "opacity-40" : "", idx === 0 ? "rounded-l-full" : "", idx === steps.length - 1 ? "rounded-r-full" : "")} 
+              className={cn("h-1.5 w-full transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]", colorClass, isCurrent ? "opacity-100" : isCompleted ? "opacity-40" : "", idx === 0 ? "rounded-l-full" : "", idx === steps.length - 1 ? "rounded-r-full" : "")} 
              />
           );
         })}
@@ -1783,6 +1944,7 @@ const Orders = () => {
     const [printingOrder, setPrintingOrder] = React.useState<typeof orders[0] | null>(null);
     const [orderToComplete, setOrderToComplete] = React.useState<string | null>(null);
     const [activeTab, setActiveTab] = React.useState<'TODOS' | 'MESA' | 'RECOGIDA' | 'DOMICILIO'>('TODOS');
+    const [expandedOrderId, setExpandedOrderId] = React.useState<string | null>(null);
 
     const handlePrint = (order: typeof orders[0]) => {
         setPrintingOrder(order);
@@ -1853,64 +2015,108 @@ const Orders = () => {
             
         } catch (e) {
             console.error("Error al exportar CSV", e);
-            alert("Hubo un error al exportar CSV");
+            toast.error("Hubo un error al exportar CSV");
         }
     };
 
-    const renderOrderCard = (order: typeof orders[0]) => (
+    const renderOrderCard = (order: typeof orders[0]) => {
+        const isExpanded = expandedOrderId === order.id;
+
+        return (
         <motion.div 
             layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
+            transition={{ type: "spring", duration: 0.4, bounce: 0.15 }}
             key={order.id} 
-            className={`bg-surface-container-high rounded-2xl p-6 border ${order.status === 'LISTO' ? 'border-green-500' : 'border-white/5'} hover:border-brand-primary/30 transition-all group`}
+            onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
+            className={`bg-surface-container-high rounded-2xl p-6 border ${order.status === 'LISTO' ? 'border-green-500' : 'border-white/5'} hover:border-brand-primary/30 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer group`}
         >
             <div className="flex justify-between items-start mb-2">
                 <div>
                 <span className="text-3xl font-display font-black text-brand-primary">#{order.id}</span>
-                <p className="text-sm text-gray-500 font-bold">{order.time} • {order.customer}</p>
-                {order.address && <p className="text-sm text-brand-secondary">{order.address}</p>}
-                {order.table && <p className="text-sm text-brand-primary">Mesa: {order.table}</p>}
-                {order.paymentMethod && <p className="text-xs uppercase text-green-400 font-bold mt-1">Pago: {order.paymentMethod}</p>}
                 </div>
-                <span className={`text-white text-[10px] uppercase font-black px-2 py-1 rounded ${order.status === 'PENDIENTE' ? 'bg-brand-red' : order.status === 'PREPARANDO' ? 'bg-brand-yellow text-black' : order.status === 'LISTO' ? 'bg-green-500 text-black' : order.status === 'EN_REPARTO' ? 'bg-brand-secondary text-black' : order.status === 'COMPLETADO' ? 'bg-gray-600 text-white' : 'bg-brand-primary text-black'}`}>
-                    {order.status.replace('_', ' ')}
-                </span>
+                <div className="flex flex-col items-end gap-2">
+                    <span className={`text-white text-[10px] uppercase font-black px-2 py-1 rounded ${order.status === 'PENDIENTE' ? 'bg-brand-red' : order.status === 'PREPARANDO' ? 'bg-brand-yellow text-black' : order.status === 'LISTO' ? 'bg-green-500 text-black' : order.status === 'EN_REPARTO' ? 'bg-brand-secondary text-black' : order.status === 'COMPLETADO' ? 'bg-gray-600 text-white' : 'bg-brand-primary text-black'}`}>
+                        {order.status.replace('_', ' ')}
+                    </span>
+                    <span className="text-gray-500 text-xs font-bold">{order.time}</span>
+                </div>
             </div>
             
             <OrderProgressBar status={order.status} type={order.type} />
             
-            {order.type === 'DOMICILIO' && order.address && (
-                <AddressMap address={order.address} />
+            <p className="text-sm font-bold text-gray-400 mt-4 mb-2 truncate">
+                {order.type === 'MESA' ? `Para servir en Mesa: ${order.table || '?'}` : order.type === 'RECOGIDA' ? 'Para Recoger en Local' : `Para Entregar a Domicilio`}
+            </p>
+            
+            {!isExpanded && (
+               <div className="text-xs text-brand-primary/80 font-bold mb-1 flex items-center justify-between">
+                   <span>Haz clic para ver {order.items.length} artículos y detalles</span>
+                   <ChevronDown size={16} className="opacity-70" />
+               </div>
             )}
 
-            <div className="space-y-2 mb-6 mt-4 text-sm font-bold text-gray-300">
-                {order.items.map((item, idx) => (
-                    <p key={idx} className="flex items-center gap-2">{item}</p>
-                ))}
-            </div>
-            {order.status === 'LISTO' && order.type === 'MESA' && (
-                <button onClick={() => setOrderToComplete(order.id)} className="w-full bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-black font-bold py-4 md:py-3 rounded-xl transition-all border border-green-500/50 active:scale-95 text-base md:text-sm mt-3 shadow-sm">
-                    Entregar al Cliente
-                </button>
-            )}
-            {order.status === 'LISTO' && order.type === 'DOMICILIO' && (
-                <button onClick={() => updateOrderStatus(order.id, 'EN_REPARTO')} className="w-full bg-brand-secondary/20 text-brand-secondary hover:bg-brand-secondary hover:text-black font-bold py-4 md:py-3 rounded-xl transition-all border border-brand-secondary/50 active:scale-95 text-base md:text-sm mt-3 shadow-sm">
-                    Asignar Repartidor
-                </button>
-            )}
-            {order.status === 'COMPLETADO' && (
-                <button onClick={() => handlePrint(order)} className="w-full flex items-center justify-center gap-2 bg-white/5 text-white hover:bg-white/10 font-bold py-4 md:py-3 rounded-xl transition-all border border-white/10 mt-3 active:scale-95 text-base md:text-sm shadow-sm">
-                    <Printer size={18} /> Imprimir Ticket
-                </button>
-            )}
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="mt-4 pt-4 border-t border-white/5 space-y-3" onClick={(e) => e.stopPropagation()}>
+                            <div className="bg-black/30 rounded-xl p-4">
+                                <h4 className="text-xs uppercase text-gray-500 tracking-widest font-black mb-2">Cliente</h4>
+                                <p className="text-sm font-bold text-gray-300">{order.customer}</p>
+                                {order.address && <p className="text-sm text-brand-secondary">{order.address}</p>}
+                                {order.paymentMethod && <p className="text-xs uppercase text-green-400 font-bold mt-1">Pago: {order.paymentMethod}</p>}
+                            </div>
+
+                            {order.type === 'DOMICILIO' && order.address && (
+                                <div className="rounded-xl overflow-hidden border border-white/10">
+                                    <AddressMap address={order.address} />
+                                </div>
+                            )}
+
+                            <div className="bg-black/30 rounded-xl p-4">
+                                <h4 className="text-xs uppercase text-gray-500 tracking-widest font-black mb-2">Artículos ({order.items.length})</h4>
+                                <div className="space-y-2 text-sm font-bold text-gray-300">
+                                    {order.items.map((item, idx) => (
+                                        <p key={idx} className="flex items-start gap-2">
+                                            <span className="text-brand-primary mt-0.5">•</span>
+                                            <span className="flex-1">{item}</span>
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {order.status === 'LISTO' && order.type === 'MESA' && (
+                                <button onClick={(e) => { e.stopPropagation(); setOrderToComplete(order.id); }} className="w-full bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-black font-bold py-4 md:py-3 rounded-xl transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] border border-green-500/50 active:scale-[0.97] text-base md:text-sm shadow-sm mt-4">
+                                    Entregar al Cliente
+                                </button>
+                            )}
+                            {order.status === 'LISTO' && order.type === 'DOMICILIO' && (
+                                <button onClick={(e) => { e.stopPropagation(); updateOrderStatus(order.id, 'EN_REPARTO'); }} className="w-full bg-brand-secondary/20 text-brand-secondary hover:bg-brand-secondary hover:text-black font-bold py-4 md:py-3 rounded-xl transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] border border-brand-secondary/50 active:scale-[0.97] text-base md:text-sm shadow-sm mt-4">
+                                    Asignar Repartidor
+                                </button>
+                            )}
+                            {order.status === 'COMPLETADO' && (
+                                <button onClick={(e) => { e.stopPropagation(); handlePrint(order); }} className="w-full flex items-center justify-center gap-2 bg-white/5 text-white hover:bg-white/10 font-bold py-4 md:py-3 rounded-xl transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] border border-white/10 mt-4 active:scale-[0.97] text-base md:text-sm shadow-sm">
+                                    <Printer size={18} /> Imprimir Ticket
+                                </button>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
-    );
+        );
+    };
 
     return (
-    <div className="space-y-8 animate-in zoom-in-95 duration-500 max-w-7xl mx-auto">
+    <div className="space-y-8 animate-in zoom-in-95 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] max-w-7xl mx-auto">
       <ConfirmModal 
         isOpen={!!orderToComplete}
         title="Completar Pedido"
@@ -1964,14 +2170,14 @@ const Orders = () => {
                         type="date" 
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
-                        className="w-full sm:w-44 bg-surface-base border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-white font-bold tracking-wide focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all cursor-pointer shadow-inner"
+                        className="w-full sm:w-44 bg-surface-base border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-white font-bold tracking-wide focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer shadow-inner"
                     />
                 </div>
                 <div className="relative w-full sm:w-auto flex-1">
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as Order['status'] | 'ALL')}
-                        className="w-full sm:w-44 bg-surface-base border border-white/10 rounded-2xl py-3 px-4 text-sm font-bold tracking-wide text-white focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all cursor-pointer appearance-none shadow-inner"
+                        className="w-full sm:w-44 bg-surface-base border border-white/10 rounded-2xl py-3 px-4 text-sm font-bold tracking-wide text-white focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer appearance-none shadow-inner"
                     >
                         <option value="ALL">Todos los Estados</option>
                         <option value="PENDIENTE">🔴 Pendiente</option>
@@ -1988,36 +2194,36 @@ const Orders = () => {
                         placeholder="Buscar ID, Cliente..." 
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-surface-base border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold tracking-wide text-white focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-inner"
+                        className="w-full bg-surface-base border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold tracking-wide text-white focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-inner"
                     />
                 </div>
             </div>
             <div className="flex gap-3 w-full sm:w-auto pt-4 sm:pt-0 border-t border-white/5 sm:border-t-0 mt-2 sm:mt-0">
                 <button 
                     onClick={handleExportCSV}
-                    className="flex items-center justify-center gap-2 bg-surface-base hover:bg-white/5 text-gray-300 font-bold text-xs uppercase tracking-widest px-5 py-3 rounded-2xl border border-white/10 transition-all shadow-inner"
+                    className="flex items-center justify-center gap-2 bg-surface-base hover:bg-white/5 text-gray-300 font-bold text-xs uppercase tracking-widest px-5 py-3 rounded-2xl border border-white/10 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-inner active:scale-[0.97]"
                     title="Exportar a CSV"
                 >
                     <Download size={16} />
                     Exportar
                 </button>
-                <div className="bg-brand-red/10 text-brand-red font-black text-xs px-5 py-3 rounded-2xl border border-brand-red/20 shadow-[0_0_15px_rgba(255,107,107,0.2)] whitespace-nowrap flex-1 text-center sm:flex-none uppercase tracking-[0.2em] relative overflow-hidden group hover:scale-[1.02] transition-transform">{newCount} Nuevos</div>
-                <div className="bg-green-500/10 text-green-400 font-black text-xs px-5 py-3 rounded-2xl border border-green-400/20 shadow-[0_0_15px_rgba(34,197,94,0.1)] whitespace-nowrap flex-1 text-center sm:flex-none uppercase tracking-[0.2em] relative overflow-hidden group hover:scale-[1.02] transition-transform">{readyCount} Listos</div>
+                <div className="bg-brand-red/10 text-brand-red font-black text-xs px-5 py-3 rounded-2xl border border-brand-red/20 shadow-[0_0_15px_rgba(255,107,107,0.2)] whitespace-nowrap flex-1 text-center sm:flex-none uppercase tracking-[0.2em] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">{newCount} Nuevos</div>
+                <div className="bg-green-500/10 text-green-400 font-black text-xs px-5 py-3 rounded-2xl border border-green-400/20 shadow-[0_0_15px_rgba(34,197,94,0.1)] whitespace-nowrap flex-1 text-center sm:flex-none uppercase tracking-[0.2em] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">{readyCount} Listos</div>
             </div>
         </div>
       </div>
 
       <div className="flex gap-4 border-b border-white/10 overflow-x-auto custom-scrollbar pb-2">
-          <button onClick={() => setActiveTab('TODOS')} className={`px-6 py-3 rounded-t-xl font-black uppercase tracking-widest text-sm transition-all ${activeTab === 'TODOS' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
+          <button onClick={() => setActiveTab('TODOS')} className={`px-6 py-3 rounded-t-xl font-black uppercase tracking-widest text-sm transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${activeTab === 'TODOS' ? 'bg-white/10 text-white border-b-2 border-white' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
               Todos
           </button>
-          <button onClick={() => setActiveTab('MESA')} className={`px-6 py-3 rounded-t-xl font-black uppercase tracking-widest text-sm transition-all flex items-center gap-2 ${activeTab === 'MESA' ? 'bg-brand-primary/20 text-brand-primary border-b-2 border-brand-primary' : 'text-gray-500 hover:text-brand-primary hover:bg-brand-primary/5'}`}>
+          <button onClick={() => setActiveTab('MESA')} className={`px-6 py-3 rounded-t-xl font-black uppercase tracking-widest text-sm transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] flex items-center gap-2 ${activeTab === 'MESA' ? 'bg-brand-primary/20 text-brand-primary border-b-2 border-brand-primary' : 'text-gray-500 hover:text-brand-primary hover:bg-brand-primary/5'}`}>
               Mesa <span className="bg-black/50 px-2 py-0.5 rounded-full text-xs">{filteredOrders.filter(o => o.type === 'MESA').length}</span>
           </button>
-          <button onClick={() => setActiveTab('RECOGIDA')} className={`px-6 py-3 rounded-t-xl font-black uppercase tracking-widest text-sm transition-all flex items-center gap-2 ${activeTab === 'RECOGIDA' ? 'bg-brand-yellow/20 text-brand-yellow border-b-2 border-brand-yellow' : 'text-gray-500 hover:text-brand-yellow hover:bg-brand-yellow/5'}`}>
+          <button onClick={() => setActiveTab('RECOGIDA')} className={`px-6 py-3 rounded-t-xl font-black uppercase tracking-widest text-sm transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] flex items-center gap-2 ${activeTab === 'RECOGIDA' ? 'bg-brand-yellow/20 text-brand-yellow border-b-2 border-brand-yellow' : 'text-gray-500 hover:text-brand-yellow hover:bg-brand-yellow/5'}`}>
               Recogida <span className="bg-black/50 px-2 py-0.5 rounded-full text-xs">{filteredOrders.filter(o => o.type === 'RECOGIDA').length}</span>
           </button>
-          <button onClick={() => setActiveTab('DOMICILIO')} className={`px-6 py-3 rounded-t-xl font-black uppercase tracking-widest text-sm transition-all flex items-center gap-2 ${activeTab === 'DOMICILIO' ? 'bg-brand-secondary/20 text-brand-secondary border-b-2 border-brand-secondary' : 'text-gray-500 hover:text-brand-secondary hover:bg-brand-secondary/5'}`}>
+          <button onClick={() => setActiveTab('DOMICILIO')} className={`px-6 py-3 rounded-t-xl font-black uppercase tracking-widest text-sm transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] flex items-center gap-2 ${activeTab === 'DOMICILIO' ? 'bg-brand-secondary/20 text-brand-secondary border-b-2 border-brand-secondary' : 'text-gray-500 hover:text-brand-secondary hover:bg-brand-secondary/5'}`}>
               Domicilio <span className="bg-black/50 px-2 py-0.5 rounded-full text-xs">{filteredOrders.filter(o => o.type === 'DOMICILIO').length}</span>
           </button>
       </div>
@@ -2090,8 +2296,42 @@ const Profile = () => {
     const [showNotificationGuide, setShowNotificationGuide] = React.useState(false);
     const [pushEnabled, setPushEnabled] = React.useState(false);
     const [pushSubscription, setPushSubscription] = React.useState<PushSubscription | null>(null);
+    const [notificationPermission, setNotificationPermission] = React.useState<NotificationPermission | 'default'>('default');
+    const [swRegistered, setSwRegistered] = React.useState(false);
     const [newAddress, setNewAddress] = React.useState('');
     const [isSavingAddress, setIsSavingAddress] = React.useState(false);
+    const [isEditingProfile, setIsEditingProfile] = React.useState(false);
+    const [editName, setEditName] = React.useState(user?.name || '');
+    const [editPhone, setEditPhone] = React.useState(user?.phone || '');
+    const [editAddress, setEditAddress] = React.useState(user?.address || '');
+    const [avatarUrl, setAvatarUrl] = React.useState<string>(user?.avatarUrl || "https://images.unsplash.com/photo-1577214190833-28989b66236b?q=80&w=2000&auto=format&fit=crop");
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const base64 = event.target?.result as string;
+                setAvatarUrl(base64);
+                if (user && updateUser) {
+                    updateUser(user.id, { avatarUrl: base64 });
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSaveProfile = () => {
+        if (!user || !updateUser) return;
+        updateUser(user.id, {
+            name: editName,
+            phone: editPhone,
+            address: editAddress
+        });
+        setIsEditingProfile(false);
+        toast.success('Perfil actualizado correctamente');
+    };
 
     const handleSaveAddress = () => {
         if (!newAddress.trim() || !user || !updateUser) return;
@@ -2109,21 +2349,25 @@ const Profile = () => {
     };
 
     React.useEffect(() => {
+        if ('Notification' in window) {
+            setNotificationPermission(Notification.permission);
+        }
         if ('serviceWorker' in navigator && 'PushManager' in window) {
             navigator.serviceWorker.register('/sw.js').then(reg => {
+                setSwRegistered(true);
                 reg.pushManager.getSubscription().then(sub => {
                     if (sub) {
                         setPushEnabled(true);
                         setPushSubscription(sub);
                     }
                 });
-            });
+            }).catch(() => setSwRegistered(false));
         }
     }, []);
 
     const togglePushNotifications = async () => {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-            alert('Las notificaciones Push no están soportadas en este navegador.');
+            toast.error('Las notificaciones Push no están soportadas en este navegador.');
             return;
         }
 
@@ -2138,7 +2382,7 @@ const Profile = () => {
             } else {
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') {
-                    alert('Permiso de notificación denegado. Actívalo en los ajustes de tu navegador.');
+                    toast.error('Permiso de notificación denegado. Actívalo en los ajustes de tu navegador.');
                     return;
                 }
 
@@ -2163,7 +2407,7 @@ const Profile = () => {
             }
         } catch (e) {
             console.error('Error configurando Push:', e);
-            alert('Hubo un error al configurar las notificaciones.');
+            toast.error('Hubo un error al configurar las notificaciones.');
         }
     };
 
@@ -2173,6 +2417,9 @@ const Profile = () => {
     const displayRole = role || "Chef Ejecutivo";
     
     const [historyOrders, setHistoryOrders] = React.useState<any[]>([]);
+    const [lifetimeValue, setLifetimeValue] = React.useState(0);
+    const [loyaltyStatus, setLoyaltyStatus] = React.useState<'ORO' | 'PLATA' | 'BRONCE'>('BRONCE');
+    const [pushDebugLogs, setPushDebugLogs] = React.useState<any[]>([]);
     
     React.useEffect(() => {
         const fetchHistory = async () => {
@@ -2180,9 +2427,104 @@ const Profile = () => {
             setHistoryOrders(history);
         };
         fetchHistory();
+        
+        const fetchLifetime = async () => {
+            try {
+                const res = await fetch(`/api/users/${encodeURIComponent(displayPhone)}/lifetime-value`);
+                const data = await res.json();
+                setLifetimeValue(data.lifetimeValue || 0);
+            } catch (e) {
+                console.error("Error fetching lifetime value:", e);
+            }
+        };
+        if (displayPhone) {
+            fetchLifetime();
+        }
+
+        if (role !== 'CLIENTE') {
+            const fetchPushLogs = async () => {
+                try {
+                    const res = await fetch('/api/push/subscriber-status');
+                    const data = await res.json();
+                    setPushDebugLogs(data);
+                } catch (e) {
+                    console.error("Error fetching push logs:", e);
+                }
+            };
+            fetchPushLogs();
+        }
     }, [displayPhone, orders]);
 
+    React.useEffect(() => {
+        if (lifetimeValue >= 500) setLoyaltyStatus('ORO');
+        else if (lifetimeValue >= 150) setLoyaltyStatus('PLATA');
+        else setLoyaltyStatus('BRONCE');
+    }, [lifetimeValue]);
+
     const userOrders = orders.filter(o => o.customer === displayName || o.phone === displayPhone);
+
+    const handleDownloadReceipt = async (order: any) => {
+        const doc = new jsPDF();
+        
+        doc.setFillColor(34, 34, 34);
+        doc.rect(0, 0, 210, 40, 'F');
+        
+        doc.setTextColor(249, 206, 29);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DON CORLEONE', 105, 20, { align: 'center' });
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Auténtica Pizza Italiana', 105, 30, { align: 'center' });
+        
+        doc.setTextColor(40, 40, 40);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('RECIBO DE PEDIDO', 20, 55);
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`ID del Pedido: #${order.id}`, 20, 65);
+        doc.text(`Fecha: ${new Date(order.created_at || order.createdAt || Date.now()).toLocaleString('es-ES')}`, 20, 72);
+        doc.text(`Cliente: ${user?.name || 'Cliente'}`, 20, 79);
+        doc.text(`Tipo de Pedido: ${order.type || 'DOMICILIO'}`, 20, 86);
+        if (order.address && order.type === 'DOMICILIO') {
+            doc.text(`Dirección: ${order.address}`, 20, 93);
+        }
+        
+        const tableData = order.items?.map((item: any) => [
+            `${item.quantity}x`,
+            item.name || 'Producto Desconocido',
+            item.notes ? `(${item.notes})` : '-',
+            `€${Number(item.price || 0).toFixed(2)}`,
+            `€${(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)}`
+        ]) || [];
+        
+        autoTable(doc, {
+            startY: 105,
+            head: [['Cant.', 'Producto', 'Notas', 'Precio Unit.', 'Subtotal']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [249, 206, 29], textColor: [0, 0, 0], fontStyle: 'bold' },
+            styles: { fontSize: 10, cellPadding: 3 },
+            alternateRowStyles: { fillColor: [250, 250, 250] }
+        });
+        
+        const finalY = (doc as any).lastAutoTable.finalY + 15;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.text(`TOTAL: €${Number(order.total).toFixed(2)}`, 150, finalY);
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(150, 150, 150);
+        doc.text('Gracias por su preferencia. ¡Buen provecho!', 105, 280, { align: 'center' });
+        
+        doc.save(`recibo_${order.id}.pdf`);
+        toast.success('Recibo PDF descargado');
+    };
 
     const handleRepeatOrder = (order: typeof orders[0]) => {
         const newOrder = {
@@ -2194,33 +2536,58 @@ const Profile = () => {
             createdAt: Date.now()
         };
         addOrder(newOrder);
-        alert("¡Pedido repetido y enviado a cocina!");
+        toast.success("¡Pedido repetido y enviado a cocina!");
     };
 
     return (
-        <div className="space-y-8 animate-in slide-in-from-top-10 duration-700">
+        <div className="space-y-8 animate-in slide-in-from-top-10 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
             <section className="relative bg-surface-container-high rounded-3xl p-8 md:p-12 overflow-hidden border-b-4 border-brand-yellow">
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
-                    <div className="w-48 h-48 rounded-3xl overflow-hidden border-4 border-white/10 shadow-2xl rotate-3 group hover:rotate-0 transition-transform duration-500">
-                        <img src="https://images.unsplash.com/photo-1577214190833-28989b66236b?q=80&w=2000&auto=format&fit=crop" className="w-full h-full object-cover" alt={displayName} />
+                    <div 
+                        className="relative w-48 h-48 rounded-3xl overflow-hidden border-4 border-white/10 shadow-2xl rotate-3 group hover:rotate-0 transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <img src={avatarUrl} className="w-full h-full object-cover" alt={displayName} />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <span className="text-white font-bold tracking-widest uppercase text-sm">Cambiar Foto</span>
+                        </div>
                     </div>
+                    <input 
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                        accept="image/*"
+                        className="hidden"
+                    />
                     <div className="text-center md:text-left space-y-4">
                         <h2 className="text-6xl font-display font-black uppercase italic tracking-tighter">{displayName}</h2>
                         <div className="flex flex-wrap justify-center md:justify-start gap-4">
                             <span className="bg-brand-yellow text-black px-6 py-2 rounded-full font-black uppercase text-xs">{displayRole}</span>
                             <span className="bg-white/10 text-brand-primary px-6 py-2 rounded-full font-black uppercase text-xs">ID: {user?.id || 'MM-2024-089'}</span>
+                            <span className={`px-6 py-2 rounded-full font-black uppercase text-xs border ${
+                                loyaltyStatus === 'ORO' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.4)]' :
+                                loyaltyStatus === 'PLATA' ? 'bg-gray-400/20 text-gray-300 border-gray-400/50' :
+                                'bg-amber-700/20 text-amber-600 border-amber-700/50'
+                            }`}>
+                                Socio {loyaltyStatus} ({lifetimeValue.toFixed(2)}€)
+                            </span>
                         </div>
                         <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                            <button className="bg-brand-primary/10 text-brand-primary font-bold px-8 py-3 rounded-xl border border-brand-primary/20 hover:bg-brand-primary/20 transition-all">Editar Perfil</button>
+                            <button 
+                                onClick={() => {
+                                    setIsEditingProfile(true);
+                                    document.getElementById('detalles-perfil')?.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                                className="bg-brand-primary/10 text-brand-primary font-bold px-8 py-3 rounded-xl border border-brand-primary/20 hover:bg-brand-primary/20 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
+                            >
+                                Editar Perfil
+                            </button>
                             <button 
                                 onClick={togglePushNotifications}
-                                className={`notification-toggle-button font-bold px-8 py-3 rounded-xl border transition-all relative group flex items-center justify-center gap-2 ${
-                                    typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'denied' 
-                                        ? 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20' 
-                                        : pushEnabled && pushSubscription
-                                        ? 'bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20' 
-                                        : 'bg-brand-secondary/10 border-brand-secondary/20 text-brand-secondary hover:bg-brand-secondary/20'
-                                }`}>
+                                className={`notification-toggle-button font-bold px-8 py-3 rounded-xl border transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] relative group flex items-center justify-center gap-2 ${
+ typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'denied' ? 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20' : pushEnabled && pushSubscription
+ ? 'bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20' : 'bg-brand-secondary/10 border-brand-secondary/20 text-brand-secondary hover:bg-brand-secondary/20'
+ } active:scale-[0.97]`}>
                                 {typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'denied' && (
                                     <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
                                 )}
@@ -2233,7 +2600,7 @@ const Profile = () => {
                             </button>
                             <button 
                                 onClick={() => setShowNotificationGuide(true)}
-                                className="bg-white/5 text-gray-300 font-bold px-6 py-3 rounded-xl border border-white/10 hover:bg-white/10 transition-all flex border border-white/10 items-center gap-2">
+                                className="bg-white/5 text-gray-300 font-bold px-6 py-3 rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] flex border border-white/10 items-center gap-2">
                                 <Search className="w-4 h-4" /> Guía
                             </button>
                         </div>
@@ -2309,26 +2676,43 @@ const Profile = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <div className="lg:col-span-4 space-y-8">
-                    <div className="bg-surface-container rounded-3xl p-8 border border-white/5">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-brand-primary mb-8">Detalles</h3>
+                    <div id="detalles-perfil" className="bg-surface-container rounded-3xl p-8 border border-white/5">
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-brand-primary">Detalles</h3>
+                            {!isEditingProfile ? (
+                                <button onClick={() => setIsEditingProfile(true)} className="text-xs font-bold text-gray-400 hover:text-white transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">Editar</button>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <button onClick={() => setIsEditingProfile(false)} className="text-xs font-bold text-gray-400 hover:text-white transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">Cancelar</button>
+                                    <button onClick={handleSaveProfile} className="text-xs font-bold text-brand-primary">Guardar</button>
+                                </div>
+                            )}
+                        </div>
                         <div className="space-y-6">
                             <div>
-                                <p className="text-[10px] text-gray-500 font-black uppercase">Teléfono</p>
-                                <p className="font-bold">{displayPhone}</p>
+                                <p className="text-[10px] text-gray-500 font-black uppercase">Nombre</p>
+                                {!isEditingProfile ? (
+                                    <p className="font-bold">{user?.name}</p>
+                                ) : (
+                                    <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-primary" />
+                                )}
                             </div>
-                            {user?.address && (
-                                <div>
-                                    <p className="text-[10px] text-gray-500 font-black uppercase">Dirección</p>
-                                    <p className="font-bold">{user.address}</p>
-                                </div>
-                            )}
-                            {role !== 'CLIENTE' && (
-                                <div className="pt-6 border-t border-white/5">
-                                    <p className="text-[10px] text-brand-red font-black uppercase">Contacto Emergencia</p>
-                                    <p className="font-bold">Giulia Rossi (Esposa)</p>
-                                    <p className="text-sm text-gray-500">+34 699 887 766</p>
-                                </div>
-                            )}
+                            <div>
+                                <p className="text-[10px] text-gray-500 font-black uppercase">Teléfono</p>
+                                {!isEditingProfile ? (
+                                    <p className="font-bold">{displayPhone}</p>
+                                ) : (
+                                    <input type="text" value={editPhone} onChange={e => setEditPhone(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-primary" />
+                                )}
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-gray-500 font-black uppercase">Dirección (Principal)</p>
+                                {!isEditingProfile ? (
+                                    <p className="font-bold">{user?.address || 'Ninguna'}</p>
+                                ) : (
+                                    <input type="text" value={editAddress} onChange={e => setEditAddress(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-primary" />
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -2345,7 +2729,7 @@ const Profile = () => {
                                         </div>
                                         <button 
                                             onClick={() => handleRemoveAddress(idx)}
-                                            className="text-gray-500 hover:text-brand-red transition-colors"
+                                            className="text-gray-500 hover:text-brand-red transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]"
                                         >
                                             <X className="w-4 h-4" />
                                         </button>
@@ -2368,7 +2752,7 @@ const Profile = () => {
                                 <button 
                                     onClick={handleSaveAddress}
                                     disabled={!newAddress.trim() || isSavingAddress}
-                                    className="bg-brand-secondary text-black p-3 rounded-xl hover:bg-brand-yellow transition-colors font-bold text-sm disabled:opacity-50"
+                                    className="bg-brand-secondary text-black p-3 rounded-xl hover:bg-brand-yellow transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-bold text-sm disabled:opacity-50 active:scale-[0.97]"
                                 >
                                     Guardar
                                 </button>
@@ -2382,7 +2766,7 @@ const Profile = () => {
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/5">
                                     <span className="font-bold">Acceso Face ID</span>
-                                    <div className="w-12 h-6 bg-brand-yellow rounded-full relative p-1 cursor-pointer">
+                                    <div className="w-12 h-6 bg-brand-yellow rounded-full relative p-1 cursor-pointer active:scale-[0.98]">
                                         <div className="w-4 h-4 bg-black rounded-full ml-auto"></div>
                                     </div>
                                 </div>
@@ -2393,7 +2777,13 @@ const Profile = () => {
                     <div id="profile-notification-settings" className="bg-surface-container rounded-3xl p-8 border border-white/5 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-brand-secondary/10 rounded-full blur-2xl"></div>
                         <div className="flex justify-between items-center mb-6 relative z-10">
-                            <h3 className="text-xs font-black uppercase tracking-widest text-brand-primary">Servicio de Notificaciones</h3>
+                            <h3 className="text-xs font-black uppercase tracking-widest text-brand-primary flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                                Servicio de Notificaciones
+                                <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/10">
+                                    <span className={`w-2 h-2 rounded-full ${swRegistered ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} title={swRegistered ? "Service Worker Registrado" : "Service Worker No Registrado"}></span>
+                                    <span className="text-[9px] text-gray-400 uppercase font-bold">{swRegistered ? 'SW Activo' : 'SW Inactivo'}</span>
+                                </div>
+                            </h3>
                             <div className="flex items-center gap-4">
                                 {pushEnabled && (
                                     <div className="flex items-center gap-2">
@@ -2403,12 +2793,25 @@ const Profile = () => {
                                 )}
                                 <div 
                                     onClick={togglePushNotifications}
-                                    className={`w-14 h-7 rounded-full relative p-1 cursor-pointer transition-colors ${pushEnabled ? 'bg-brand-primary' : 'bg-gray-600'}`}
+                                    title={notificationPermission === 'denied' ? 'Permisos denegados en el navegador' : 'Activar notificaciones'}
+                                    className={`notification-toggle-button w-14 h-7 rounded-full relative p-1 cursor-pointer transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+                                        notificationPermission === 'denied' ? 'bg-brand-red' : (pushEnabled ? 'bg-brand-primary' : 'bg-gray-600')
+                                    }`}
                                 >
-                                    <div className={`w-5 h-5 bg-black rounded-full transition-all ${pushEnabled ? 'translate-x-7' : 'translate-x-0'}`}></div>
+                                    {notificationPermission === 'denied' && (
+                                        <span className="absolute -top-2 -right-2 w-4 h-4 bg-white rounded-full flex items-center justify-center text-xs">❌</span>
+                                    )}
+                                    <div className={`w-5 h-5 bg-black rounded-full transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${pushEnabled ? 'translate-x-7' : 'translate-x-0'}`}></div>
                                 </div>
                             </div>
                         </div>
+                        
+                        {notificationPermission === 'denied' && (
+                            <div className="bg-brand-red/10 border border-brand-red/30 p-4 rounded-xl mb-6 relative z-10">
+                                <h4 className="text-brand-red font-bold text-sm">Permisos Denegados</h4>
+                                <p className="text-xs text-brand-red/80 mt-1">Has bloqueado las notificaciones en tu navegador. Por favor, haz clic en el icono del candado en la barra de direcciones de tu navegador y cambia el permiso a 'Permitir'.</p>
+                            </div>
+                        )}
                         
                         <p className="text-sm text-gray-400 mb-6 relative z-10">
                             {pushEnabled && pushSubscription
@@ -2418,11 +2821,11 @@ const Profile = () => {
                         
                         {!pushEnabled && (
                             <div className="space-y-6 relative z-10">
-                                <div className="bg-black/20 p-4 rounded-2xl border border-white/5 hover:border-brand-primary/30 transition-colors">
+                                <div className="bg-black/20 p-4 rounded-2xl border border-white/5 hover:border-brand-primary/30 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                     <h4 className="font-bold text-white text-sm flex items-center gap-2 mb-2"><span className="text-blue-400 text-lg">🍎</span> iOS e iPadOS</h4>
                                     <p className="text-xs text-gray-400 leading-relaxed">Abre <strong>Ajustes &gt; Notificaciones</strong>. Asegúrate de que tu aplicación web (añadida a la pantalla de inicio) tenga permiso para mostrar <strong>Tiras</strong> y sonido activado. No funcionará sin añadir al inicio.</p>
                                 </div>
-                                <div className="bg-black/20 p-4 rounded-2xl border border-white/5 hover:border-brand-primary/30 transition-colors">
+                                <div className="bg-black/20 p-4 rounded-2xl border border-white/5 hover:border-brand-primary/30 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                     <h4 className="font-bold text-white text-sm flex items-center gap-2 mb-2"><span className="text-green-400 text-lg">🤖</span> Sistema Android</h4>
                                     <p className="text-xs text-gray-400 leading-relaxed">Accede a <strong>Ajustes &gt; Aplicaciones &gt; Tu Navegador (Chrome)</strong>. En el apartado de Permisos, verifica que <strong>Notificaciones</strong> esté concedido para este dominio.</p>
                                 </div>
@@ -2450,11 +2853,11 @@ const Profile = () => {
                                                 reg.showNotification('¡Prueba de Notificación Exitosa!', {
                                                     body: 'Si puedes leer esto, estás listo para recibir actualizaciones.',
                                                     icon: '/icon.svg',
-                                                    vibrate: [200, 100, 200]
+                                                    
                                                 });
                                             }
                                         }}
-                                        className="w-full sm:w-auto bg-surface-container hover:bg-white/10 text-white font-bold uppercase tracking-widest text-[10px] px-4 py-2 rounded-xl transition-all border border-white/20"
+                                        className="w-full sm:w-auto bg-surface-container hover:bg-white/10 text-white font-bold uppercase tracking-widest text-[10px] px-4 py-2 rounded-xl transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] border border-white/20"
                                     >
                                         Probar Suscripción
                                     </button>
@@ -2462,17 +2865,73 @@ const Profile = () => {
                             </div>
                         )}
                     </div>
+                    
+                    {role !== 'CLIENTE' && (
+                        <div className="bg-surface-container rounded-3xl p-8 border border-brand-red/10 relative overflow-hidden mt-8">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-brand-primary mb-4 flex items-center gap-2">
+                                Monitor de Entregas Push (Admin)
+                            </h3>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm text-gray-400">
+                                    <thead className="bg-black/20 text-[10px] uppercase text-gray-500 border-b border-white/10 font-bold">
+                                        <tr>
+                                            <th className="px-4 py-3">Teléfono</th>
+                                            <th className="px-4 py-3">Estado</th>
+                                            <th className="px-4 py-3">Error</th>
+                                            <th className="px-4 py-3">Última Accion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {pushDebugLogs.length === 0 ? (
+                                            <tr><td colSpan={4} className="px-4 py-4 text-center text-xs italic">No hay registros de envío</td></tr>
+                                        ) : pushDebugLogs.map((log) => (
+                                            <tr key={log.id} className="border-b border-white/5 hover:bg-white/5 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                                                <td className="px-4 py-3 font-mono text-xs text-white">{log.phone}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${log.status === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-500'}`}>
+                                                        {log.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-red-400 text-xs max-w-[150px] truncate" title={log.error_message}>{log.error_message || '-'}</td>
+                                                <td className="px-4 py-3 text-xs">{new Date(Number(log.updated_at)).toLocaleString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <div className="lg:col-span-8 space-y-8">
                     {role !== 'CLIENTE' && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-surface-container-high p-8 rounded-3xl border-l-4 border-brand-primary">
-                                <p className="text-[10px] text-gray-400 font-black uppercase mb-1">Horas Trabajadas</p>
-                                <p className="text-4xl font-display font-black text-brand-primary">164.5</p>
+                            <div className="relative bg-gradient-to-br from-black/60 to-brand-primary/5 p-8 rounded-[2rem] border border-white/10 hover:border-brand-primary/40 shadow-2xl hover:shadow-[0_0_30px_rgba(225,184,70,0.15)] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/20 rounded-full blur-3xl -translate-y-12 translate-x-12 group-hover:bg-brand-primary/30 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]"></div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-3 mb-4 text-brand-primary">
+                                        <Clock size={20} className="drop-shadow-[0_0_8px_rgba(225,184,70,0.8)]" />
+                                        <p className="text-[10px] text-gray-300 font-black uppercase tracking-widest">Horas Trabajadas</p>
+                                    </div>
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="text-5xl font-display font-black text-white drop-shadow-[0_2px_10px_rgba(225,184,70,0.4)]">164</p>
+                                        <p className="text-lg font-bold text-brand-primary">.5h</p>
+                                    </div>
+                                    <p className="text-xs text-green-400 mt-2 font-bold">+12% este mes</p>
+                                </div>
                             </div>
-                            <div className="bg-surface-container-high p-8 rounded-3xl border-l-4 border-brand-secondary">
-                                <p className="text-[10px] text-gray-400 font-black uppercase mb-1">Horas Extra</p>
-                                <p className="text-4xl font-display font-black text-brand-secondary">12.0</p>
+                            <div className="relative bg-gradient-to-br from-black/60 to-brand-secondary/5 p-8 rounded-[2rem] border border-white/10 hover:border-brand-secondary/40 shadow-2xl hover:shadow-[0_0_30px_rgba(255,179,177,0.15)] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-secondary/20 rounded-full blur-3xl -translate-y-12 translate-x-12 group-hover:bg-brand-secondary/30 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]"></div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-3 mb-4 text-brand-secondary">
+                                        <Zap size={20} className="drop-shadow-[0_0_8px_rgba(255,179,177,0.8)]" />
+                                        <p className="text-[10px] text-gray-300 font-black uppercase tracking-widest">Horas Extra</p>
+                                    </div>
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="text-5xl font-display font-black text-white drop-shadow-[0_2px_10px_rgba(255,179,177,0.4)]">12</p>
+                                        <p className="text-lg font-bold text-brand-secondary">.0h</p>
+                                    </div>
+                                    <p className="text-xs text-brand-secondary mt-2 font-bold opacity-80">Por cobrar en nómina</p>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -2484,7 +2943,7 @@ const Profile = () => {
                         ) : (
                             <div className="space-y-4">
                                 {historyOrders.map((order, index) => (
-                                    <div key={`history-${order.id}-${index}`} className="bg-surface-container-high p-6 rounded-2xl border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-brand-primary/30 transition-colors group">
+                                    <div key={`history-${order.id}-${index}`} className="bg-surface-container-high p-6 rounded-2xl border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-brand-primary/30 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] group">
                                         <div>
                                             <div className="flex items-center gap-3 mb-4">
                                                 <span className="font-mono text-sm text-brand-yellow font-bold">#{order.id}</span>
@@ -2510,18 +2969,27 @@ const Profile = () => {
                                                 Total: €{Number(order.total).toFixed(2)}
                                             </div>
                                         </div>
-                                        <button 
-                                            // Ensure order.items are transformed to match what addOrder expects natively if needed
-                                            // The mock store takes string[] for items, here we pass the generic structure back with a mapping
-                                            onClick={() => {
-                                                const simpleItems = order.items?.map((i: any) => `${i.quantity}x ${i.name} ${i.notes ? `(${i.notes})` : ''}`) || [];
-                                                handleRepeatOrder({ ...order, items: simpleItems });
-                                            }}
-                                            className="whitespace-nowrap shrink-0 flex items-center justify-center gap-2 bg-brand-primary/10 text-brand-primary border border-brand-primary/20 font-black uppercase px-6 py-3 rounded-xl hover:bg-brand-primary hover:text-black transition-all md:self-end"
-                                        >
-                                            <RotateCcw className="w-4 h-4" />
-                                            Repetir Pedido
-                                        </button>
+                                        <div className="flex flex-col sm:flex-row gap-2 shrink-0 md:self-end">
+                                            <button 
+                                                onClick={() => handleDownloadReceipt(order)}
+                                                className="whitespace-nowrap flex items-center justify-center gap-2 bg-black/40 text-gray-300 border border-white/10 font-black uppercase px-6 py-3 rounded-xl hover:bg-white/10 hover:text-white transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                Descargar PDF
+                                            </button>
+                                            <button 
+                                                // Ensure order.items are transformed to match what addOrder expects natively if needed
+                                                // The mock store takes string[] for items, here we pass the generic structure back with a mapping
+                                                onClick={() => {
+                                                    const simpleItems = order.items?.map((i: any) => `${i.quantity}x ${i.name} ${i.notes ? `(${i.notes})` : ''}`) || [];
+                                                    handleRepeatOrder({ ...order, items: simpleItems });
+                                                }}
+                                                className="whitespace-nowrap flex items-center justify-center gap-2 bg-brand-primary/10 text-brand-primary border border-brand-primary/20 font-black uppercase px-6 py-3 rounded-xl hover:bg-brand-primary hover:text-black transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
+                                            >
+                                                <RotateCcw className="w-4 h-4" />
+                                                Repetir Pedido
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -2556,7 +3024,7 @@ const ClockIn = () => {
     };
 
     return (
-      <div className="max-w-md mx-auto space-y-10 animate-in fade-in duration-500 relative">
+      <div className="max-w-md mx-auto space-y-10 animate-in fade-in zoom-in-[0.98] duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] relative">
         <div className="text-center space-y-2">
           <h2 className="text-6xl font-display font-black tracking-tighter">08:42 AM</h2>
           <p className="text-brand-primary font-black uppercase tracking-widest">Lunes, 23 Oct</p>
@@ -2575,18 +3043,18 @@ const ClockIn = () => {
           <div className="grid grid-cols-2 gap-4">
             <button 
               onClick={() => simulateScan('FACE')}
-              className={`bg-surface-container aspect-square rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4 hover:border-brand-primary transition-all group overflow-hidden relative shadow-lg ${scanState === 'IDLE' ? 'animate-[pulse_3s_ease-in-out_infinite]' : ''}`}
+              className={`bg-surface-container aspect-square rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4 hover:border-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] group overflow-hidden relative shadow-lg ${scanState === 'IDLE' ? 'animate-[pulse_3s_ease-in-out_infinite]' : ''}`}
             >
                 <div className="absolute inset-0 bg-brand-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <ScanFace size={40} className="text-brand-primary group-hover:scale-110 transition-transform duration-300" />
+                <ScanFace size={40} className="text-brand-primary group-hover:scale-110 transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]" />
                 <span className="font-black text-xs uppercase text-brand-primary">Face ID</span>
             </button>
             <button 
               onClick={() => simulateScan('FINGER')}
-              className={`bg-surface-container aspect-square rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4 hover:border-brand-primary transition-all group overflow-hidden relative shadow-lg ${scanState === 'IDLE' ? 'animate-[pulse_3s_ease-in-out_infinite] delay-150' : ''}`}
+              className={`bg-surface-container aspect-square rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-4 hover:border-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] group overflow-hidden relative shadow-lg ${scanState === 'IDLE' ? 'animate-[pulse_3s_ease-in-out_infinite] delay-150' : ''}`}
             >
                 <div className="absolute inset-0 bg-brand-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <Fingerprint size={40} className="text-brand-primary group-hover:scale-110 transition-transform duration-300" />
+                <Fingerprint size={40} className="text-brand-primary group-hover:scale-110 transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]" />
                 <span className="font-black text-xs uppercase text-brand-primary">Huella Dactilar</span>
             </button>
           </div>
@@ -2654,30 +3122,55 @@ function RouteDisplay({ origin, destination }: {
   const map = useMap();
   const routesLib = useMapsLibrary('routes');
   const polylinesRef = React.useRef<google.maps.Polyline[]>([]);
+  const [legs, setLegs] = React.useState<google.maps.routes.RouteLeg | null>(null);
 
   React.useEffect(() => {
     if (!routesLib || !map) return;
-    // Clear previous route
     polylinesRef.current.forEach(p => p.setMap(null));
+    setLegs(null);
 
     routesLib.Route.computeRoutes({
       origin,
       destination,
       travelMode: 'DRIVING',
-      fields: ['path', 'distanceMeters', 'durationMillis', 'viewport'],
+      fields: ['path', 'distanceMeters', 'durationMillis', 'viewport', 'legs.startLocation', 'legs.endLocation'],
     }).then(({ routes }) => {
       if (routes?.[0]) {
         const newPolylines = routes[0].createPolylines();
-        newPolylines.forEach(p => p.setMap(map));
+        // Give polylines a nice color and weight
+        newPolylines.forEach(p => {
+            p.setOptions({ strokeColor: '#e1b846', strokeOpacity: 0.8, strokeWeight: 5 });
+            p.setMap(map);
+        });
         polylinesRef.current = newPolylines;
         if (routes[0].viewport) map.fitBounds(routes[0].viewport);
+        if (routes[0].legs?.[0]) {
+           setLegs(routes[0].legs[0]);
+        }
       }
+    }).catch(e => {
+        console.error('Route calculation failed', e);
     });
 
     return () => polylinesRef.current.forEach(p => p.setMap(null));
   }, [routesLib, map, origin, destination]);
 
-  return null;
+  return (
+    <>
+      {legs?.startLocation && (
+          <AdvancedMarker position={{lat: (legs.startLocation as any).latLng!.lat(), lng: (legs.startLocation as any).latLng!.lng()}} zIndex={1}>
+             <div className="w-10 h-10 bg-black rounded-full border-4 border-brand-primary flex items-center justify-center shadow-lg shadow-black/50 overflow-hidden">
+                <span className="text-xl">🍕</span>
+             </div>
+          </AdvancedMarker>
+      )}
+      {legs?.endLocation && (
+          <AdvancedMarker position={{lat: (legs.endLocation as any).latLng!.lat(), lng: (legs.endLocation as any).latLng!.lng()}} zIndex={2}>
+             <Pin background="#ef4444" borderColor="#ffffff" glyphColor="#ffffff" scale={1.2} />
+          </AdvancedMarker>
+      )}
+    </>
+  );
 }
 
 const Delivery = () => {
@@ -2719,7 +3212,7 @@ const Delivery = () => {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
             <div className="space-y-6">
                 {deliveryOrders.map(order => (
-                    <div key={order.id} className="bg-surface-container rounded-[2rem] overflow-hidden border border-white/5 hover:border-brand-primary/30 transition-all group shadow-xl hover:shadow-[0_10px_40px_rgba(225,184,70,0.1)]">
+                    <div key={order.id} className="bg-surface-container rounded-[2rem] overflow-hidden border border-white/5 hover:border-brand-primary/30 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] group shadow-xl hover:shadow-[0_10px_40px_rgba(225,184,70,0.1)]">
                         <div className="p-8 bg-surface-base/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative">
                             <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-primary/20 to-transparent"></div>
                             <div className="flex items-center gap-4">
@@ -2736,7 +3229,7 @@ const Delivery = () => {
                                   <Clock size={16} className="text-brand-primary" /> {order.time}
                               </div>
                               {order.type === 'DOMICILIO' && order.address && (
-                                  <button onClick={() => setSelectedOrderAddress(order.address!)} className="text-brand-secondary text-xs uppercase font-black hover:text-white transition-colors flex items-center gap-1 tracking-widest bg-brand-secondary/10 px-4 py-2 rounded-lg border border-brand-secondary/20 hover:bg-brand-secondary/20"><Navigation size={14} /> Ver Ruta</button>
+                                  <button onClick={() => setSelectedOrderAddress(order.address!)} className="text-brand-secondary text-xs uppercase font-black hover:text-white transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] flex items-center gap-1 tracking-widest bg-brand-secondary/10 px-4 py-2 rounded-lg border border-brand-secondary/20 hover:bg-brand-secondary/20"><Navigation size={14} /> Ver Ruta</button>
                               )}
                             </div>
                         </div>
@@ -2774,11 +3267,11 @@ const Delivery = () => {
                                 {(order.status === 'LISTO' || order.status === 'EN_REPARTO') && (
                                     <div className="flex flex-col gap-3 pt-4 border-t border-white/5">
                                         {order.status === 'LISTO' && order.type === 'DOMICILIO' && (
-                                            <button onClick={() => updateOrderStatus(order.id, 'EN_REPARTO')} className="w-full bg-brand-secondary text-black font-black py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(255,179,177,0.2)] uppercase tracking-wider text-sm flex justify-center items-center gap-2">
+                                            <button onClick={() => updateOrderStatus(order.id, 'EN_REPARTO')} className="w-full bg-brand-secondary text-black font-black py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_0_20px_rgba(255,179,177,0.2)] uppercase tracking-wider text-sm flex justify-center items-center gap-2">
                                                 <Navigation size={18} /> Iniciar Reparto
                                             </button>
                                         )}
-                                        <button onClick={() => setOrderToComplete(order.id)} className="w-full bg-brand-primary text-black font-black py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(225,184,70,0.2)] uppercase tracking-wider text-sm flex justify-center items-center gap-2">
+                                        <button onClick={() => setOrderToComplete(order.id)} className="w-full bg-brand-primary text-black font-black py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_0_20px_rgba(225,184,70,0.2)] uppercase tracking-wider text-sm flex justify-center items-center gap-2">
                                             <Check size={18} /> Entregado
                                         </button>
                                     </div>
@@ -2859,16 +3352,8 @@ const Cart = () => {
     const [phoneFound, setPhoneFound] = React.useState(false);
     const [paymentMethod, setPaymentMethod] = React.useState<'EFECTIVO' | 'TARJETA' | 'PAYPAL' | 'BIZUM'>('EFECTIVO');
     const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
-    const [actionMessage, setActionMessage] = React.useState<{type: 'error' | 'success', text: string} | null>(null);
     const resolvePaymentRef = React.useRef<(v: boolean) => void>(() => {});
     const [paymentSimMethod, setPaymentSimMethod] = React.useState<string | null>(null);
-
-    React.useEffect(() => {
-        if (actionMessage) {
-            const timer = setTimeout(() => setActionMessage(null), 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [actionMessage]);
 
     React.useEffect(() => {
         if (['ENCARGADO', 'JEFE', 'CAMARERO'].includes(role) && phone.length >= 6) {
@@ -2895,10 +3380,10 @@ const Cart = () => {
     const total = subtotalAfterDiscount + deliveryFee;
 
     const handleSubmit = async () => {
-        if (!customer) return setActionMessage({ type: 'error', text: "Falta el nombre del cliente" });
-        if (orderType === 'DOMICILIO' && !address) return setActionMessage({ type: 'error', text: "Falta la dirección de envío" });
-        if (orderType === 'MESA' && !table) return setActionMessage({ type: 'error', text: "Falta el número de mesa" });
-        if (cart.length === 0) return setActionMessage({ type: 'error', text: "No hay productos en el pedido" });
+        if (!customer) return toast.error("Falta el nombre del cliente");
+        if (orderType === 'DOMICILIO' && !address) return toast.error("Falta la dirección de envío");
+        if (orderType === 'MESA' && !table) return toast.error("Falta el número de mesa");
+        if (cart.length === 0) return toast.error("No hay productos en el pedido");
 
         if (paymentMethod !== 'EFECTIVO') {
             setIsProcessingPayment(true);
@@ -2912,7 +3397,7 @@ const Cart = () => {
             setPaymentSimMethod(null);
             
             if (!isConfirmed) {
-                setActionMessage({ type: 'error', text: 'El pago ha sido cancelado o ha fallado.' });
+                toast.error('El pago ha sido cancelado o ha fallado.');
                 return;
             }
         }
@@ -2955,7 +3440,7 @@ const Cart = () => {
         }
 
         clearCart();
-        setActionMessage({ type: 'success', text: "¡Pedido enviado a cocina!" });
+        toast.success("¡Pedido enviado a cocina!");
 
         if (['ENCARGADO', 'JEFE', 'CAMARERO'].includes(role)) {
             setCustomer('');
@@ -2966,19 +3451,7 @@ const Cart = () => {
     };
 
     return (
-    <div className="max-w-4xl mx-auto space-y-10 animate-in slide-in-from-right-5 duration-500 relative">
-        <AnimatePresence>
-            {actionMessage && (
-                <motion.div 
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl font-bold shadow-2xl backdrop-blur-md border ${actionMessage.type === 'error' ? 'bg-brand-red/90 text-white border-brand-red' : 'bg-green-500/90 text-white border-green-400'}`}
-                >
-                    {actionMessage.text}
-                </motion.div>
-            )}
-        </AnimatePresence>
+    <div className="max-w-4xl mx-auto space-y-10 animate-in slide-in-from-right-5 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] relative">
 
         <AnimatePresence>
             {paymentSimMethod && (
@@ -2998,10 +3471,10 @@ const Cart = () => {
                         <h3 className="text-2xl font-display font-black text-white mb-2">Simulación de Pago</h3>
                         <p className="text-gray-400 mb-6 font-bold">Pasarela virtual para <span className="text-brand-primary">{paymentSimMethod}</span>.<br/>Total a cobrar: <span className="text-white">€{total.toFixed(2)}</span></p>
                         <div className="flex gap-4">
-                            <button onClick={() => resolvePaymentRef.current(false)} className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-brand-red/20 text-gray-400 hover:text-brand-red transition-colors font-bold">
+                            <button onClick={() => resolvePaymentRef.current(false)} className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-brand-red/20 text-gray-400 hover:text-brand-red transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-bold">
                                 Fallar Pago
                             </button>
-                            <button onClick={() => resolvePaymentRef.current(true)} className="flex-1 py-3 rounded-xl bg-brand-primary/20 hover:bg-brand-primary text-brand-primary hover:text-black transition-colors font-black">
+                            <button onClick={() => resolvePaymentRef.current(true)} className="flex-1 py-3 rounded-xl bg-brand-primary/20 hover:bg-brand-primary text-brand-primary hover:text-black transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-black">
                                 Simular Éxito
                             </button>
                         </div>
@@ -3023,16 +3496,16 @@ const Cart = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
             <div className="lg:col-span-8 space-y-6">
                 <div className="bg-surface-container rounded-3xl p-2 flex border border-white/5">
-                    <button onClick={() => setOrderType('MESA')} className={`flex-1 py-4 font-black uppercase text-xs rounded-2xl transition-all ${orderType === 'MESA' ? 'bg-brand-primary text-black' : 'text-gray-500 hover:text-white'}`}>En Mesa</button>
-                    <button onClick={() => setOrderType('RECOGIDA')} className={`flex-1 py-4 font-black uppercase text-xs rounded-2xl transition-all ${orderType === 'RECOGIDA' ? 'bg-brand-primary text-black' : 'text-gray-500 hover:text-white'}`}>Recoger</button>
-                    <button onClick={() => setOrderType('DOMICILIO')} className={`flex-1 py-4 font-black uppercase text-xs rounded-2xl transition-all ${orderType === 'DOMICILIO' ? 'bg-brand-primary text-black' : 'text-gray-500 hover:text-white'}`}>A Domicilio</button>
+                    <button onClick={() => setOrderType('MESA')} className={`flex-1 py-4 font-black uppercase text-xs rounded-2xl transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${orderType === 'MESA' ? 'bg-brand-primary text-black' : 'text-gray-500 hover:text-white'}`}>En Mesa</button>
+                    <button onClick={() => setOrderType('RECOGIDA')} className={`flex-1 py-4 font-black uppercase text-xs rounded-2xl transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${orderType === 'RECOGIDA' ? 'bg-brand-primary text-black' : 'text-gray-500 hover:text-white'}`}>Recoger</button>
+                    <button onClick={() => setOrderType('DOMICILIO')} className={`flex-1 py-4 font-black uppercase text-xs rounded-2xl transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${orderType === 'DOMICILIO' ? 'bg-brand-primary text-black' : 'text-gray-500 hover:text-white'}`}>A Domicilio</button>
                 </div>
 
                 <div className="bg-surface-container rounded-3xl p-6 border border-white/5 space-y-4">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-xl font-black">Datos del Cliente</h3>
                         {!user && role === 'CLIENTE' && (
-                            <button onClick={() => navigate('/login')} className="text-xs font-bold text-brand-primary hover:text-brand-yellow px-3 py-1.5 bg-brand-primary/10 rounded-lg transition-colors">
+                            <button onClick={() => navigate('/login')} className="text-xs font-bold text-brand-primary hover:text-brand-yellow px-3 py-1.5 bg-brand-primary/10 rounded-lg transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 Crear cuenta o iniciar sesión
                             </button>
                         )}
@@ -3040,12 +3513,12 @@ const Cart = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-bold uppercase text-gray-400 mb-1 block">Teléfono</label>
-                            <input value={phone} onChange={e => setPhone(e.target.value)} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-primary transition-colors" placeholder="Teléfono" />
+                            <input value={phone} onChange={e => setPhone(e.target.value)} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-primary transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]" placeholder="Teléfono" />
                             {phoneFound && <span className="text-[10px] text-green-400 font-bold mt-1 block">✓ Cliente encontrado en la base de datos</span>}
                         </div>
                         <div>
                             <label className="text-xs font-bold uppercase text-gray-400 mb-1 block">Nombre</label>
-                            <input value={customer} onChange={e => setCustomer(e.target.value)} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-primary transition-colors" placeholder="Nombre completo" />
+                            <input value={customer} onChange={e => setCustomer(e.target.value)} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-primary transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]" placeholder="Nombre completo" />
                         </div>
                         {orderType === 'DOMICILIO' && (
                             <div className="md:col-span-2">
@@ -3053,7 +3526,7 @@ const Cart = () => {
                                 {user?.savedAddresses && user.savedAddresses.length > 0 && (
                                     <div className="flex gap-2 mb-3 flex-wrap">
                                         {user.savedAddresses.map((addr, idx) => (
-                                            <button key={idx} type="button" onClick={() => setAddress(addr)} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] font-bold text-gray-300 transition-colors">
+                                            <button key={idx} type="button" onClick={() => setAddress(addr)} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] font-bold text-gray-300 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                                 ★ {addr}
                                             </button>
                                         ))}
@@ -3064,12 +3537,12 @@ const Cart = () => {
                                     onChange={setAddress} 
                                     onAddressSelect={(addr) => {
                                         if (!addr.toLowerCase().includes('nules')) {
-                                            alert("Solo hacemos repartos a domicilio en la zona de Nules. Para otras localidades, selecciona 'Para Recoger'.");
+                                            toast.warning("Solo hacemos repartos a domicilio en la zona de Nules. Para otras localidades, selecciona 'Para Recoger'.");
                                             setOrderType('RECOGIDA'); 
                                         }
                                         setAddress(addr);
                                     }}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-primary transition-colors" 
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-primary transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]" 
                                     placeholder="Calle, Número, Piso (Ej: Nules)..." 
                                 />
                             </div>
@@ -3077,7 +3550,7 @@ const Cart = () => {
                         {orderType === 'MESA' && (
                             <div className="md:col-span-2">
                                 <label className="text-xs font-bold uppercase text-gray-400 mb-1 block">Número de Mesa</label>
-                                <input value={table} onChange={e => setTable(e.target.value)} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-primary transition-colors" placeholder="Ej. Mesa 4" />
+                                <input value={table} onChange={e => setTable(e.target.value)} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-primary transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]" placeholder="Ej. Mesa 4" />
                             </div>
                         )}
                     </div>
@@ -3085,7 +3558,7 @@ const Cart = () => {
 
                 <div className="space-y-4">
                     {cart.map((item) => (
-                        <div key={item.menuItem.id} className="bg-surface-container rounded-3xl p-6 flex flex-col gap-4 border border-white/5 hover:border-brand-primary/20 transition-all">
+                        <div key={item.menuItem.id} className="bg-surface-container rounded-3xl p-6 flex flex-col gap-4 border border-white/5 hover:border-brand-primary/20 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="flex items-center gap-6">
                                 <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 shrink-0">
                                     {item.menuItem.image ? (
@@ -3097,23 +3570,23 @@ const Cart = () => {
                                 <div className="flex-1">
                                     <div className="flex justify-between items-start mb-2">
                                         <h3 className="text-xl font-black uppercase text-white truncate pr-4">{item.menuItem.name}</h3>
-                                        <button onClick={() => removeFromCart(item.menuItem.id)} className="text-gray-600 hover:text-brand-red transition-all">
+                                        <button onClick={() => removeFromCart(item.menuItem.id)} className="text-gray-600 hover:text-brand-red transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                             <ShoppingCart size={18} />
                                         </button>
                                     </div>
                                     <div className="flex justify-between items-end">
                                         <span className="text-2xl font-display font-black text-brand-yellow">€{(item.menuItem.price * item.quantity).toFixed(2)}</span>
                                         <div className="flex items-center gap-4 bg-black/40 rounded-full px-4 py-2 border border-white/5 shadow-inner">
-                                            <button onClick={() => updateCartItem(item.menuItem.id, Math.max(1, item.quantity - 1))} className="text-gray-400 hover:text-white transition-colors font-bold text-lg">-</button>
+                                            <button onClick={() => updateCartItem(item.menuItem.id, Math.max(1, item.quantity - 1))} className="text-gray-400 hover:text-white transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-bold text-lg">-</button>
                                             <span className="font-black w-4 text-center">{item.quantity}</span>
-                                            <button onClick={() => updateCartItem(item.menuItem.id, item.quantity + 1)} className="text-gray-400 hover:text-brand-primary transition-colors font-bold text-lg">+</button>
+                                            <button onClick={() => updateCartItem(item.menuItem.id, item.quantity + 1)} className="text-gray-400 hover:text-brand-primary transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-bold text-lg">+</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div className="mt-2 text-sm">
                                 <textarea 
-                                    className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-gray-300 outline-none focus:border-brand-primary transition-colors resize-none placeholder-gray-600"
+                                    className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-gray-300 outline-none focus:border-brand-primary transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] resize-none placeholder-gray-600"
                                     rows={2}
                                     placeholder="Notas de preparación (ej. sin cebolla, muy hecho...)"
                                     value={item.notes || ''}
@@ -3127,7 +3600,7 @@ const Cart = () => {
                             <ShoppingCart size={48} className="mx-auto mb-4 text-brand-primary opacity-50" />
                             <h4 className="text-xl font-bold text-white mb-2">Tu pedido está vacío</h4>
                             <p className="text-gray-400 mb-6 max-w-sm mx-auto">Vuelve a la carta y anade los platos que más te apetezcan para completar tu pedido.</p>
-                            <button onClick={() => navigate('/')} className="bg-brand-primary text-black font-black uppercase text-xs px-6 py-3 rounded-xl hover:scale-105 transition-transform">
+                            <button onClick={() => navigate('/')} className="bg-brand-primary text-black font-black uppercase text-xs px-6 py-3 rounded-xl hover:scale-105 transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 Ver Carta
                             </button>
                         </div>
@@ -3142,16 +3615,16 @@ const Cart = () => {
                         <div className="pt-4 border-t border-white/5 space-y-3">
                             <span className="text-gray-400">Método de pago</span>
                             <div className="grid grid-cols-2 gap-2">
-                                <button onClick={() => setPaymentMethod('EFECTIVO')} className={`py-3 rounded-xl border transition-all ${paymentMethod === 'EFECTIVO' ? 'bg-brand-primary/20 text-brand-primary border-brand-primary' : 'bg-surface-base text-gray-400 border-white/10 hover:border-white/20'}`}>
+                                <button onClick={() => setPaymentMethod('EFECTIVO')} className={`py-3 rounded-xl border transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${paymentMethod === 'EFECTIVO' ? 'bg-brand-primary/20 text-brand-primary border-brand-primary' : 'bg-surface-base text-gray-400 border-white/10 hover:border-white/20'}`}>
                                     Efectivo
                                 </button>
-                                <button onClick={() => setPaymentMethod('TARJETA')} className={`py-3 rounded-xl border transition-all ${paymentMethod === 'TARJETA' ? 'bg-brand-primary/20 text-brand-primary border-brand-primary' : 'bg-surface-base text-gray-400 border-white/10 hover:border-white/20'}`}>
+                                <button onClick={() => setPaymentMethod('TARJETA')} className={`py-3 rounded-xl border transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${paymentMethod === 'TARJETA' ? 'bg-brand-primary/20 text-brand-primary border-brand-primary' : 'bg-surface-base text-gray-400 border-white/10 hover:border-white/20'}`}>
                                     Tarjeta
                                 </button>
-                                <button onClick={() => setPaymentMethod('PAYPAL')} className={`py-3 rounded-xl border transition-all ${paymentMethod === 'PAYPAL' ? 'bg-brand-primary/20 text-brand-primary border-brand-primary' : 'bg-surface-base text-gray-400 border-white/10 hover:border-white/20'}`}>
+                                <button onClick={() => setPaymentMethod('PAYPAL')} className={`py-3 rounded-xl border transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${paymentMethod === 'PAYPAL' ? 'bg-brand-primary/20 text-brand-primary border-brand-primary' : 'bg-surface-base text-gray-400 border-white/10 hover:border-white/20'}`}>
                                     PayPal
                                 </button>
-                                <button onClick={() => setPaymentMethod('BIZUM')} className={`py-3 rounded-xl border transition-all ${paymentMethod === 'BIZUM' ? 'bg-brand-primary/20 text-brand-primary border-brand-primary' : 'bg-surface-base text-gray-400 border-white/10 hover:border-white/20'}`}>
+                                <button onClick={() => setPaymentMethod('BIZUM')} className={`py-3 rounded-xl border transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${paymentMethod === 'BIZUM' ? 'bg-brand-primary/20 text-brand-primary border-brand-primary' : 'bg-surface-base text-gray-400 border-white/10 hover:border-white/20'}`}>
                                     Bizum
                                 </button>
                             </div>
@@ -3178,7 +3651,7 @@ const Cart = () => {
                             <span className="text-2xl font-display font-black text-brand-primary">€{total.toFixed(2)}</span>
                         </div>
                     </div>
-                    <button onClick={handleSubmit} disabled={isProcessingPayment} className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl shadow-[0_0_30px_#ffe4af40] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:active:scale-100">
+                    <button onClick={handleSubmit} disabled={isProcessingPayment} className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl shadow-[0_0_30px_#ffe4af40] hover:scale-105 active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] disabled:opacity-50 disabled:hover:scale-100 disabled:active:scale-100">
                         {isProcessingPayment ? 'Procesando Pago...' : 'Enviar a Cocina'}
                     </button>
                 </div>
@@ -3203,7 +3676,7 @@ const Kitchen = () => {
     });
 
     return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-10 duration-500">
+    <div className="space-y-8 animate-in slide-in-from-bottom-10 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
       <div className="flex justify-between items-center bg-surface-container border border-white/5 p-6 rounded-2xl">
         <div>
           <h2 className="text-4xl font-display font-black text-brand-secondary">Sistema de Cocina KDS</h2>
@@ -3230,11 +3703,11 @@ const Kitchen = () => {
                     filter: order.status === 'PREPARANDO' ? ['brightness(1.5)', 'brightness(1)'] : 'brightness(1)'
                 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ duration: 0.4, type: "spring", bounce: 0.3 }}
+                transition={{ duration: 0.25, type: "spring", bounce: 0.3 }}
                 key={order.id} 
                 className={`bg-surface-container rounded-3xl p-6 border-l-4 ${order.type === 'DOMICILIO' ? 'border-brand-secondary' : order.type === 'MESA' ? 'border-brand-primary' : 'border-white'} flex flex-col justify-between shadow-2xl relative overflow-hidden group ${order.status === 'PREPARANDO' ? 'ring-2 ring-brand-secondary ring-offset-4 ring-offset-surface-base' : isLate ? 'animate-[pulse_1.5s_ease-in-out_infinite] bg-red-950/40 border-l-red-500 ring-2 ring-red-500/50 ring-offset-4 ring-offset-surface-base' : ''}`}
             >
-               <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl transition-colors ${order.type === 'DOMICILIO' ? 'bg-brand-secondary/5 group-hover:bg-brand-secondary/10' : order.type === 'MESA' ? 'bg-brand-primary/5 group-hover:bg-brand-primary/10' : 'bg-white/5 group-hover:bg-white/10'}`}></div>
+               <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${order.type === 'DOMICILIO' ? 'bg-brand-secondary/5 group-hover:bg-brand-secondary/10' : order.type === 'MESA' ? 'bg-brand-primary/5 group-hover:bg-brand-primary/10' : 'bg-white/5 group-hover:bg-white/10'}`}></div>
                <div>
                   <div className="flex flex-col mb-6 border-b border-white/5 pb-4 gap-2">
                     <div className="flex justify-between items-start">
@@ -3269,11 +3742,11 @@ const Kitchen = () => {
                   </ul>
                </div>
                {order.status === 'PENDIENTE' ? (
-                   <button onClick={() => updateOrderStatus(order.id, 'PREPARANDO')} className="w-full bg-white/10 text-white py-5 md:py-4 rounded-xl font-black uppercase tracking-widest text-sm md:text-base hover:bg-white/20 transition-all active:scale-95 mt-4 border border-white/10">
+                   <button onClick={() => updateOrderStatus(order.id, 'PREPARANDO')} className="w-full bg-white/10 text-white py-5 md:py-4 rounded-xl font-black uppercase tracking-widest text-sm md:text-base hover:bg-white/20 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] mt-4 border border-white/10">
                       Empezar a Preparar
                    </button>
                ) : (
-                   <button onClick={() => updateOrderStatus(order.id, 'LISTO')} className="w-full bg-brand-primary text-black py-5 md:py-4 rounded-xl font-black uppercase tracking-widest text-sm md:text-base hover:scale-[1.02] active:scale-95 transition-all shadow-xl mt-4">
+                   <button onClick={() => updateOrderStatus(order.id, 'LISTO')} className="w-full bg-brand-primary text-black py-5 md:py-4 rounded-xl font-black uppercase tracking-widest text-sm md:text-base hover:scale-[1.02] active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-xl mt-4">
                       {order.type === 'MESA' ? 'Enviar a Pedidos' : 'Enviar a Repartos'}
                    </button>
                )}
@@ -3310,7 +3783,7 @@ const StoreSettingsPage = () => {
                 <span className="material-symbols-outlined text-6xl text-brand-red mb-4">gavel</span>
                 <h1 className="text-3xl font-display font-black text-brand-red mb-2 text-center text-balance tracking-tight">Acceso Denegado</h1>
                 <p className="text-gray-400 font-bold mb-8 text-center text-balance max-w-md">No tienes los privilegios necesarios para acceder a la configuración de la tienda.</p>
-                <button onClick={() => navigate(-1)} className="bg-surface-container border border-white/10 hover:bg-white/5 active:bg-white/10 transition-colors px-6 py-3 rounded-full font-bold">
+                <button onClick={() => navigate(-1)} className="bg-surface-container border border-white/10 hover:bg-white/5 active:bg-white/10 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] px-6 py-3 rounded-full font-bold">
                     Volver atrás
                 </button>
             </div>
@@ -3343,7 +3816,7 @@ const StoreSettingsPage = () => {
             vapidPrivateKey: formData.vapidPrivateKey
         });
         
-        alert('Configuración guardada correctamente.');
+        toast.success('Configuración guardada correctamente.');
     };
 
     return (
@@ -3375,7 +3848,7 @@ const StoreSettingsPage = () => {
                         name="openingHours"
                         value={formData.openingHours}
                         onChange={handleChange}
-                        className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all shadow-inner"
+                        className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-inner"
                         placeholder="Ej. 12:00 - 16:00, 19:30 - 23:30"
                     />
                 </div>
@@ -3389,7 +3862,7 @@ const StoreSettingsPage = () => {
                         value={formData.deliveryZones}
                         onChange={handleChange}
                         rows={3}
-                        className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all resize-none shadow-inner"
+                        className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] resize-none shadow-inner"
                         placeholder="Centro, Norte, Sur"
                     />
                 </div>
@@ -3405,7 +3878,7 @@ const StoreSettingsPage = () => {
                             value={formData.deliveryFee === 0 ? '' : formData.deliveryFee}
                             step="0.10"
                             onChange={handleChange}
-                            className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all shadow-inner"
+                            className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-inner"
                         />
                     </div>
                     <div className="space-y-3">
@@ -3417,7 +3890,7 @@ const StoreSettingsPage = () => {
                             name="contactPhone"
                             value={formData.contactPhone}
                             onChange={handleChange}
-                            className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all shadow-inner"
+                            className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-inner"
                         />
                     </div>
                 </div>
@@ -3431,7 +3904,7 @@ const StoreSettingsPage = () => {
                         name="vapidKey"
                         value={formData.vapidKey}
                         onChange={handleChange}
-                        className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all shadow-inner mb-2"
+                        className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-inner mb-2"
                         placeholder="B... (Clave VAPID pública)"
                     />
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1 mt-4">
@@ -3442,7 +3915,7 @@ const StoreSettingsPage = () => {
                         name="vapidPrivateKey"
                         value={formData.vapidPrivateKey}
                         onChange={handleChange}
-                        className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all shadow-inner"
+                        className="w-full bg-surface-base border border-white/10 px-6 py-4 rounded-2xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary text-white font-bold transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-inner"
                         placeholder="... (Clave VAPID privada)"
                     />
                     <div className="flex gap-4 mt-4">
@@ -3453,9 +3926,9 @@ const StoreSettingsPage = () => {
                                     const res = await fetch('/api/push/generate-keys');
                                     const keys = await res.json();
                                     setFormData(f => ({ ...f, vapidKey: keys.publicKey, vapidPrivateKey: keys.privateKey }));
-                                    alert('Claves generadas, recuerda Guardar Ajustes.');
+                                    toast.success('Claves generadas, recuerda Guardar Ajustes.');
                                 } catch (e) {
-                                    alert('Error generando claves');
+                                    toast.error('Error generando claves' + e);
                                 }
                             }}
                             className="bg-zinc-800 text-white font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-xl hover:bg-zinc-700 transition"
@@ -3466,7 +3939,7 @@ const StoreSettingsPage = () => {
                             type="button" 
                             onClick={async () => {
                                 if (!formData.vapidKey || !formData.vapidPrivateKey) {
-                                    alert('Debe guardar primero la clave VAPID pública y privada.');
+                                    toast.error('Debe guardar primero la clave VAPID pública y privada.');
                                     return;
                                 }
                                 try {
@@ -3479,9 +3952,9 @@ const StoreSettingsPage = () => {
                                         })
                                     });
                                     const data = await res.json();
-                                    alert(`Prueba enviada: ${data.successCount} recibidas, ${data.failureCount} fallidas.`);
+                                    toast.success(`Prueba enviada: ${data.successCount} recibidas, ${data.failureCount} fallidas.`);
                                 } catch (e) {
-                                    alert('Error enviando prueba');
+                                    toast.error('Error enviando prueba');
                                 }
                             }}
                             className="bg-brand-primary/20 border border-brand-primary/50 text-brand-primary font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-xl hover:bg-brand-primary/30 transition"
@@ -3492,7 +3965,7 @@ const StoreSettingsPage = () => {
                 </div>
 
                 <div className="pt-8 border-t border-white/5 flex justify-end">
-                    <button type="submit" className="bg-brand-primary text-black font-black uppercase tracking-[0.2em] px-10 py-5 rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(225,184,70,0.3)]">
+                    <button type="submit" className="bg-brand-primary text-black font-black uppercase tracking-[0.2em] px-10 py-5 rounded-2xl hover:scale-105 active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_0_20px_rgba(225,184,70,0.3)]">
                         Guardar Ajustes
                     </button>
                 </div>
@@ -3522,7 +3995,7 @@ const QRCodes = () => {
     const tables = Array.from({ length: numTables }, (_, i) => i + 1);
 
     return (
-        <div className="space-y-8 animate-in slide-in-from-bottom-10 duration-500">
+        <div className="space-y-8 animate-in slide-in-from-bottom-10 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-surface-container border border-white/5 p-8 rounded-3xl gap-6">
                 <div>
                     <h2 className="text-4xl font-display font-black text-brand-primary">Códigos QR de Mesas</h2>
@@ -3545,9 +4018,9 @@ const QRCodes = () => {
                 {tables.map(table => {
                     const qrUrl = `${window.location.origin}/mesa/${table}`;
                     return (
-                        <div key={table} className="bg-surface-container rounded-3xl p-6 border border-white/5 flex flex-col items-center shadow-xl group hover:border-brand-primary/50 transition-colors">
+                        <div key={table} className="bg-surface-container rounded-3xl p-6 border border-white/5 flex flex-col items-center shadow-xl group hover:border-brand-primary/50 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <h3 className="text-2xl font-display font-black text-white mb-6">Mesa <span className="text-brand-primary">{table}</span></h3>
-                            <div id={`qr-${table}`} className="bg-white p-4 rounded-2xl mb-6 shadow-inner relative group-hover:scale-105 transition-transform">
+                            <div id={`qr-${table}`} className="bg-white p-4 rounded-2xl mb-6 shadow-inner relative group-hover:scale-105 transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 <QRCodeSVG 
                                     value={qrUrl} 
                                     size={160} 
@@ -3556,11 +4029,11 @@ const QRCodes = () => {
                                     level={"Q"}
                                     includeMargin={false}
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 rounded-2xl cursor-pointer">
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 rounded-2xl cursor-pointer active:scale-[0.98]">
                                     <button 
                                         onClick={() => {
                                             navigator.clipboard.writeText(qrUrl);
-                                            alert(`Enlace de Mesa ${table} copiado: ${qrUrl}`);
+                                            toast.success(`Enlace de Mesa ${table} copiado`);
                                         }}
                                         className="bg-black text-white font-bold px-4 py-2 rounded-xl text-xs uppercase"
                                     >Copiar Enlace</button>
@@ -3577,7 +4050,7 @@ const QRCodes = () => {
             <div className="flex justify-center mt-12 mb-12">
                 <button 
                     onClick={() => window.print()}
-                    className="bg-brand-primary text-black font-black uppercase text-sm px-8 py-4 rounded-xl border-b-4 border-black/20 hover:bg-brand-yellow transition-colors flex items-center gap-3"
+                    className="bg-brand-primary text-black font-black uppercase text-sm px-8 py-4 rounded-xl border-b-4 border-black/20 hover:bg-brand-yellow transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] flex items-center gap-3"
                 >
                     <Printer className="w-5 h-5" /> Imprimir Códigos
                 </button>
@@ -3632,6 +4105,32 @@ const AnimatedRoutes = () => {
 };
 
 const AppContent = () => {
+  React.useEffect(() => {
+    const isIos = () => {
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      return /iphone|ipad|ipod/.test(userAgent);
+    };
+    const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator as any).standalone;
+    
+    if (isIos() && !isInStandaloneMode()) {
+      const hasSeenPrompt = localStorage.getItem('hasSeenIosPrompt');
+      if (!hasSeenPrompt) {
+        setTimeout(() => {
+          toast('Instala la App en tu iPhone', {
+            description: 'Toca el ícono de compartir ↗ y luego "Añadir a la pantalla de inicio" para notificaciones y acceso offline.',
+            duration: 12000,
+            icon: <span className="text-2xl">📱</span>,
+            action: {
+              label: 'Entendido',
+              onClick: () => localStorage.setItem('hasSeenIosPrompt', 'true')
+            },
+            onDismiss: () => localStorage.setItem('hasSeenIosPrompt', 'true')
+          });
+        }, 3000);
+      }
+    }
+  }, []);
+
   return (
     <BrowserRouter>
       <AnimatedRoutes />
@@ -3644,6 +4143,7 @@ export default function App() {
     return (
       <AuthProvider>
         <StoreProvider>
+          <Toaster position="bottom-center" theme="dark" richColors />
           <AppContent />
         </StoreProvider>
       </AuthProvider>
@@ -3654,6 +4154,7 @@ export default function App() {
     <APIProvider apiKey={API_KEY} version="weekly">
       <AuthProvider>
         <StoreProvider>
+          <Toaster position="bottom-center" theme="dark" richColors />
           <AppContent />
         </StoreProvider>
       </AuthProvider>

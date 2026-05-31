@@ -69,34 +69,6 @@ const SortableMenuItem: React.FC<{
 
   return (
     <div ref={setNodeRef} style={style} className="bg-surface-container rounded-2xl border border-white/5 flex flex-col group relative overflow-visible hover:z-30">
-      {/* Quick View Modal */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] bg-surface-container-high border-2 border-brand-primary/30 rounded-3xl p-6 shadow-2xl opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all delay-500 z-50 pointer-events-none scale-95 group-hover:scale-100 hidden md:block">
-         <div className="h-40 w-full rounded-2xl overflow-hidden mb-4 bg-black/50">
-           {item.image ? (
-              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-           ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-500">
-                <UtensilsCrossed size={32} className="opacity-20" />
-              </div>
-           )}
-         </div>
-         <h4 className="font-black uppercase text-white text-xl mb-1">{item.name}</h4>
-         <p className="font-bold text-brand-yellow mb-3">€{item.price.toFixed(2)}</p>
-         <p className="text-sm text-gray-300 mb-4">{item.description}</p>
-         <div className="flex gap-2 flex-wrap">
-            {item.tags?.map(tag => (
-              <span key={tag} className="inline-block px-2 py-1 bg-brand-primary/20 text-brand-primary rounded-lg text-xs font-bold">
-                #{tag}
-              </span>
-            ))}
-         </div>
-         {item.stock !== undefined && (
-            <p className="mt-4 text-xs font-bold text-gray-400">
-               Stock disponible: <span className="text-white">{item.stock}</span>
-            </p>
-         )}
-      </div>
-
       <div className="rounded-2xl overflow-hidden flex flex-col h-full relative">
         <div 
           {...attributes} 
@@ -113,22 +85,22 @@ const SortableMenuItem: React.FC<{
         )}
         <div className="h-48 bg-black/50 relative overflow-hidden shrink-0">
           {item.image ? (
-            <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 menu-item-image" />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
                <UtensilsCrossed size={32} className="opacity-20 mb-2" />
                <span className="text-xs font-bold uppercase">Sin imagen</span>
             </div>
           )}
-          <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-auto">
-            <button onClick={() => onShowQR(item)} className="bg-brand-secondary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all cursor-pointer">
-              <QrCode size={14} />
+          <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-auto cms-list-item-actions p-2">
+            <button onClick={() => onShowQR(item)} className="bg-brand-secondary text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all cursor-pointer relative z-50">
+              <QrCode size={16} />
             </button>
-            <button onClick={() => onEdit(item)} className="bg-brand-yellow text-black w-8 h-8 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all cursor-pointer">
-              <Pencil size={14} />
+            <button onClick={() => onEdit(item)} className="bg-brand-yellow text-black w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all cursor-pointer edit-button relative z-50">
+              <Pencil size={16} />
             </button>
-            <button onClick={() => onDelete(item.id)} className="bg-brand-red text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all cursor-pointer">
-              <Trash2 size={14} />
+            <button onClick={() => onDelete(item.id)} className="bg-brand-red text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all cursor-pointer relative z-50">
+              <Trash2 size={16} />
             </button>
           </div>
         </div>

@@ -61,6 +61,15 @@ export interface StoreSettings {
   vapidPrivateKey?: string;
 }
 
+export interface PushDeliveryStatus {
+  id: string;
+  userId: string;
+  endpoint: string;
+  status: 'PENDING' | 'SUCCESS' | 'FAILED';
+  errorMessage?: string;
+  timestamp: number;
+}
+
 export const INITIAL_STORE_SETTINGS: StoreSettings = {
   openingHours: '12:00 - 16:00, 19:30 - 23:30',
   deliveryZones: ['Centro', 'Norte', 'Sur'],

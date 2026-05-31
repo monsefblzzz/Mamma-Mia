@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useStore } from '../context/StoreContext';
 import { requestNotificationPermissionAndGetToken, listenToForegroundMessages } from '../firebase';
 import { Bell, BellOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const NotificationManager = () => {
     const { user } = useAuth();
@@ -49,7 +50,7 @@ export const NotificationManager = () => {
 
     const handleSubscribe = async () => {
         if (!storeSettings.vapidKey) {
-            alert('El administrador de la tienda no ha configurado la clave VAPID. Por favor, avisa a soporte.');
+            toast.error('El administrador de la tienda no ha configurado la clave VAPID. Por favor, avisa a soporte.');
             return;
         }
 
@@ -86,14 +87,14 @@ export const NotificationManager = () => {
                         body: JSON.stringify({ phone: user.phone, notificationToken: JSON.stringify(currentToken) })
                     }).catch(console.error);
                 }
-                alert('¡Suscrito a notificaciones push exitosamente!');
+                toast.success('¡Suscrito a notificaciones push exitosamente!');
             } else {
                 setPermissionStatus(Notification.permission);
-                alert('No se pudo obtener el token. Asegúrate de dar permisos al navegador.');
+                toast.error('No se pudo obtener el token. Asegúrate de dar permisos al navegador.');
             }
         } catch (e) {
             console.error('Subscripción fallida', e);
-            alert('Error intentando suscribirse a notificaciones.' + e);
+            toast.error('Error intentando suscribirse a notificaciones.');
         }
     };
 

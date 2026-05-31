@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Link, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   UtensilsCrossed, 
@@ -37,31 +37,17 @@ const NAV_ITEMS = [
 ];
 
 const Logo = () => (
-  <svg viewBox="0 0 200 150" className="w-16 h-12" xmlns="http://www.w3.org/2000/svg">
-    {/* Outer Arc - Red */}
-    <path d="M 25 125 A 75 75 0 0 1 175 125" fill="none" stroke="#D62E2E" strokeWidth="10" strokeLinecap="round"/>
-    {/* Inner Arc - Blue */}
-    <path d="M 45 125 A 55 55 0 0 1 155 125" fill="none" stroke="#1D70B8" strokeWidth="8" strokeLinecap="round"/>
-    
-    {/* Pizza Slice */}
-    <g transform="translate(100, 70) rotate(-10) scale(0.8)">
-      {/* Pizza Base (Cheese) */}
-      <path d="M -20 60 C -10 90 -20 100 -20 100 C -30 60 -5 70 -5 60 C -5 60 10 90 10 90 C 20 60 30 70 30 40 L 70 -50 L -60 -40 Z" fill="#F9CE1D" stroke="#000" strokeWidth="4" strokeLinejoin="round"/>
-      
-      {/* Dripping Cheese Lines */}
-      <path d="M -20 60 Q -15 85 -20 100 M -5 60 Q 5 85 10 90 M 20 60 Q 25 70 30 40" fill="none" stroke="#F9CE1D" strokeWidth="8" strokeLinecap="round" />
-      
-      {/* Crust */}
-      <path d="M -70 -30 C -60 -70 50 -70 80 -40 L 65 -25 C 40 -50 -40 -45 -55 -20 Z" fill="#C78E3C" stroke="#000" strokeWidth="4" strokeLinejoin="round"/>
-      <path d="M -70 -30 C -60 -70 50 -70 80 -40" fill="none" stroke="#D62E2E" strokeWidth="0"/>
-
-      {/* Pepperoni */}
-      <circle cx="-15" cy="-10" r="10" fill="#D62E2E" stroke="#000" strokeWidth="2"/>
-      <circle cx="25" cy="-20" r="10" fill="#D62E2E" stroke="#000" strokeWidth="2"/>
-      <circle cx="5" cy="15" r="10" fill="#D62E2E" stroke="#000" strokeWidth="2"/>
-      <circle cx="-35" cy="-25" r="8" fill="#D62E2E" stroke="#000" strokeWidth="2"/>
-    </g>
-  </svg>
+  <img 
+    src="/logo.png" 
+    alt="Mamma Mia Pizza Logo" 
+    className="w-16 h-16 object-contain drop-shadow-[0_0_10px_rgba(225,184,70,0.5)] group-hover:drop-shadow-[0_0_20px_rgba(225,184,70,0.8)] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]"
+    onError={(e) => {
+        // Fallback to text if the image is not found
+        const target = e.target as HTMLImageElement;
+        target.style.display = 'none';
+        target.nextElementSibling?.classList.remove('hidden');
+    }}
+  />
 );
 
 export function Layout() {
@@ -144,7 +130,7 @@ export function Layout() {
   const lowStockCount = inventory.filter(i => i.status === 'Low Stock' || i.status === 'Out of Stock').length;
 
   return (
-    <div className="flex min-h-screen bg-surface-base text-white relative font-sans selection:bg-white selection:text-black">
+    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-surface-base text-white relative font-sans selection:bg-white selection:text-black">
       <AnimatePresence>
         {showWelcomeToast && (
           <motion.div 
@@ -158,7 +144,7 @@ export function Layout() {
                 <h4 className="font-medium text-white mb-1">Oferta de bienvenida activa</h4>
                 <p className="text-sm text-gray-400">10% de descuento automático en caja.</p>
               </div>
-              <button onClick={() => setShowWelcomeToast(false)} className="text-gray-500 hover:text-white transition-colors">
+              <button onClick={() => setShowWelcomeToast(false)} className="text-gray-500 hover:text-white transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                 <X size={16} />
               </button>
             </div>
@@ -169,13 +155,13 @@ export function Layout() {
       {/* Sidebar Desktop */}
       <aside className="hidden lg:flex flex-col w-64 border-r border-white/5 sticky top-0 h-screen bg-surface-base">
         <div className="p-8 pb-6">
-          <div className="flex items-center gap-4">
+          <Link to="/" className="flex items-center gap-4 group active:scale-[0.97] transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
             <Logo />
             <div>
               <h1 className="text-xl font-display font-black text-brand-primary leading-none">MAMMA MIA!</h1>
               <p className="text-[10px] text-white tracking-[0.2em] font-sans opacity-80 mt-1">LA NOSTRA PIZZA</p>
             </div>
-          </div>
+          </Link>
         </div>
 
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
@@ -184,13 +170,13 @@ export function Layout() {
               key={item.to}
               to={item.to}
               className={({ isActive }) => cn(
-                "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm",
+                "group flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] text-sm font-bold uppercase tracking-widest",
                 isActive 
-                  ? "bg-white text-black font-semibold shadow-[0_0_20px_rgba(255,255,255,0.1)]" 
-                  : "text-gray-500 hover:text-white hover:bg-white/5"
+                  ? "bg-brand-primary text-black shadow-[0_0_20px_rgba(255,193,7,0.4)]" 
+                  : "text-gray-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
               )}
             >
-              <item.icon size={18} strokeWidth={2.5} />
+              <item.icon size={18} strokeWidth={2.5} className="group-hover:scale-90 transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]" />
               <span className="flex-1">{item.label}</span>
               {item.to === '/inventory' && lowStockCount > 0 && (
                 <span className="bg-brand-red text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -209,7 +195,7 @@ export function Layout() {
         <div className="p-4 border-t border-white/5">
           <NavLink 
             to="/profile"
-            className="flex items-center gap-3 p-3 rounded-xl bg-surface-container border border-white/5 hover:border-white/10 transition-colors cursor-pointer group"
+            className="flex items-center gap-3 p-3 rounded-xl bg-surface-container border border-white/5 hover:border-white/10 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer active:scale-[0.97] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group"
           >
             <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold text-sm">
               {user ? user.name.charAt(0).toUpperCase() : '?'}
@@ -218,7 +204,7 @@ export function Layout() {
               <p className="text-sm font-semibold truncate">{user?.name || 'Invitado'}</p>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest">{role}</p>
             </div>
-            <ArrowRight size={14} className="text-gray-600 group-hover:text-white transition-colors" />
+            <ArrowRight size={14} className="text-gray-600 group-hover:text-white transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]" />
           </NavLink>
         </div>
       </aside>
@@ -268,11 +254,11 @@ export function Layout() {
                     to={item.to}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={({ isActive }) => cn(
-                      "flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all text-sm",
+                      "flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] text-sm",
                       isActive ? "bg-white text-black font-semibold" : "text-gray-400 hover:text-white"
                     )}
                   >
-                    <item.icon size={18} strokeWidth={2.5} />
+                    <item.icon size={18} strokeWidth={2.5} className="group-hover:scale-90 transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]" />
                     <span className="flex-1">{item.label}</span>
                   </NavLink>
                 ))}
@@ -282,7 +268,7 @@ export function Layout() {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 pt-16 lg:pt-0 pb-20 lg:pb-0 min-h-screen">
+      <main className="flex-1 min-w-0 max-w-[100vw] lg:max-w-none overflow-x-hidden pt-16 lg:pt-0 pb-20 lg:pb-0 min-h-screen">
         <div className="max-w-6xl mx-auto p-4 md:p-8 lg:p-12">
           <Outlet />
         </div>
@@ -294,7 +280,7 @@ export function Layout() {
             key={item.to}
             to={item.to}
             className={({ isActive }) => cn(
-              "flex flex-col items-center gap-1.5 p-2 transition-all duration-200",
+              "flex flex-col items-center gap-1.5 p-2 transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]",
               isActive ? "text-white" : "text-gray-600 hover:text-gray-300"
             )}
           >
