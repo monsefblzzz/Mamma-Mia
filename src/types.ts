@@ -305,3 +305,23 @@ export const ORDERS: Order[] = [
   { id: '201', customer: 'Juan P.', time: '12:50 PM', items: ['1x Pizza Diavola', '2x Pan de Ajo'], status: 'PENDIENTE', type: 'DOMICILIO', total: 16.00, address: 'Calle Mayor 12', paymentMethod: 'EFECTIVO', createdAt: Date.now() - 2 * 60000 },
   { id: '301', customer: 'Marta G.', time: '12:15 PM', items: ['1x Hamburguesa Monster'], status: 'LISTO', type: 'DOMICILIO', total: 12.50, address: 'Av. Blasco 4', paymentMethod: 'PAYPAL', createdAt: Date.now() - 20 * 60000 }
 ];
+
+export function getProductImage(productName: string): string | undefined {
+  const normalized = productName.toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove accents/diacritics: e.g. "Paté" -> "PATE"
+    .replace(/[^A-Z0-9]/g, '');
+
+  if (normalized.includes('PEPPERONI')) return '/FOTOS PRODUCTOS/PEPPERONI.jpg';
+  if (normalized.includes('PESTOBURRATA') || normalized.includes('PESTOBURATA')) return '/FOTOS PRODUCTOS/PESTOBURRATA.jpg';
+  if (normalized.includes('PISTAMISU')) return '/FOTOS PRODUCTOS/PISTAMISU.jpg';
+  if (normalized.includes('PROSCIUTTOFUNGHI')) return '/FOTOS PRODUCTOS/PROSCIUTTOFUNGHI.jpg';
+  if (normalized.includes('PROSCIUTTO')) return '/FOTOS PRODUCTOS/PROSCIUTTO.jpg';
+  if (normalized.includes('RUBIA')) return '/FOTOS PRODUCTOS/RUBIA.jpg';
+  if (normalized.includes('THEBOX')) return '/FOTOS PRODUCTOS/THEBOX.jpg';
+  if (normalized.includes('VAINILLAPECAN') || normalized.includes('VANILLAPECAN')) return '/FOTOS PRODUCTOS/VAINILLAPECAN.jpg';
+  if (normalized.includes('VEGETAL')) return '/FOTOS PRODUCTOS/VEGETAL.jpg';
+  if (normalized.includes('XTREM')) return '/FOTOS PRODUCTOS/XTREM.jpg';
+  if (normalized.includes('SPRITE')) return '/FOTOS PRODUCTOS/sprite.jpg';
+  return undefined;
+}

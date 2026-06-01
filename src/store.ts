@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { db, handleFirestoreError, OperationType } from './firebase';
 import { collection, onSnapshot, setDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { dbService } from './db/DatabaseService';
-import { MenuItem, Order, CartItem, StoreSettings, INITIAL_STORE_SETTINGS, InventoryItem, INVENTORY, MENU_ITEMS } from './types';
+import { MenuItem, Order, CartItem, StoreSettings, INITIAL_STORE_SETTINGS, InventoryItem, INVENTORY, MENU_ITEMS, getProductImage } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface StoreState {
@@ -165,7 +165,7 @@ export const useAppStore = create<StoreState>()(
             description: p.description || '',
             price: Number(p.price),
             category,
-            image: p.image_url || p.image || getFallbackImage(category, p.id, p.name),
+            image: getProductImage(p.name) || p.image_url || p.image || getFallbackImage(category, p.id, p.name),
             allergy_info: p.allergens ? (Array.isArray(p.allergens) ? p.allergens.join(', ') : p.allergens) : (p.allergy_info || ''),
           };
         });

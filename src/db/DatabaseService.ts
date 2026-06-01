@@ -1,5 +1,5 @@
 import localforage from 'localforage';
-import { MENU_ITEMS } from '../types';
+import { MENU_ITEMS, getProductImage } from '../types';
 
 localforage.config({
   name: 'SereneSpaceDB',
@@ -17,7 +17,11 @@ export class DatabaseService {
     try {
       const storedProducts = await localforage.getItem<any[]>('products');
       if (storedProducts && storedProducts.length > 0) {
-        this.products = storedProducts;
+        this.products = storedProducts.map((p: any) => ({
+          ...p,
+          image: getProductImage(p.name) || p.image || p.image_url
+        }));
+        await localforage.setItem('products', this.products);
       } else {
         const imageMap: Record<string, string> = {
           'Aperitivos': 'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?w=800&auto=format&fit=crop',
@@ -33,7 +37,7 @@ export class DatabaseService {
         };
         this.products = MENU_ITEMS.map((item: any) => ({
            ...item,
-           image: item.image || imageMap[item.category] || 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&auto=format&fit=crop'
+           image: getProductImage(item.name) || item.image || imageMap[item.category] || 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&auto=format&fit=crop'
         }));
         await localforage.setItem('products', this.products);
       }
