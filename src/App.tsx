@@ -136,11 +136,17 @@ const Login = () => {
     if (showSmsVerification) {
         return (
             <div className="min-h-screen bg-surface-base flex items-center justify-center p-6 text-white relative overflow-hidden">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-primary/10 rounded-full blur-[100px]"></div>
-                <div className="w-full max-w-md bg-surface-container/80 backdrop-blur-xl p-10 rounded-3xl border border-white/10 shadow-2xl relative z-10 animate-in zoom-in-95 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                {/* Floating pizza particles */}
+                {[...Array(6)].map((_, i) => (
+                    <div key={i} className="absolute text-4xl opacity-10 animate-float-slow select-none pointer-events-none" style={{ left: `${10 + i * 15}%`, top: `${20 + (i % 3) * 25}%`, animationDelay: `${i * 1.2}s`, animationDuration: `${6 + i * 2}s` }}>
+                        {['🍕', '🧀', '🍅', '🌿', '🫒', '🔥'][i]}
+                    </div>
+                ))}
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-primary/15 rounded-full blur-[120px] animate-pulse"></div>
+                <div className="w-full max-w-md glass-panel p-10 rounded-3xl relative z-10 animate-glow-pulse animate-in zoom-in-95 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                     <div className="text-center mb-10">
                         <Phone className="w-16 h-16 mx-auto mb-4 text-brand-primary opacity-80" />
-                        <h1 className="text-3xl font-display font-black tracking-tight mb-2">Verifica tu Tlf</h1>
+                        <h1 className="text-3xl font-display font-black tracking-tight mb-2 text-gradient-gold">Verifica tu Tlf</h1>
                         <p className="text-gray-400 font-medium">Hemos mandado un SMS simulado al {phone}</p>
                     </div>
 
@@ -151,7 +157,7 @@ const Login = () => {
                                 type="text" 
                                 value={smsCode}
                                 onChange={e => setSmsCode(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-4 text-center text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium tracking-[0.5em] text-2xl"
+                                className="w-full glass-input rounded-2xl py-4 px-4 text-center text-white placeholder:text-gray-600 focus:outline-none transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium tracking-[0.5em] text-2xl"
                                 placeholder="000000"
                                 maxLength={6}
                                 required
@@ -161,7 +167,7 @@ const Login = () => {
                         <button 
                             type="submit" 
                             disabled={loading}
-                            className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_0_30px_rgba(255,228,175,0.2)] disabled:opacity-50 disabled:hover:scale-100"
+                            className="w-full bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-red-light text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] glow-gold disabled:opacity-50 disabled:hover:scale-100 animate-gradient-shift"
                         >
                             {loading ? 'Verificando...' : 'Confirmar Código'}
                         </button>
@@ -183,25 +189,25 @@ const Login = () => {
 
     return (
         <div className="min-h-screen bg-surface-base flex items-center justify-center p-6 text-white relative overflow-hidden">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-primary/10 rounded-full blur-[100px]"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-secondary/10 rounded-full blur-[100px]"></div>
+                {/* Floating pizza particles */}
+                {[...Array(8)].map((_, i) => (
+                    <div key={i} className="absolute text-3xl md:text-5xl opacity-[0.07] select-none pointer-events-none" style={{ left: `${5 + i * 12}%`, top: `${10 + (i % 4) * 22}%`, animation: `float-slow ${7 + i * 1.5}s ease-in-out infinite ${i * 0.8}s` }}>
+                        {['🍕', '🧀', '🍅', '🌿', '🫒', '🔥', '🍝', '🇮🇹'][i]}
+                    </div>
+                ))}
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-primary/15 rounded-full blur-[120px] animate-pulse"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-red/8 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-secondary/5 rounded-full blur-[150px]"></div>
             
-            <div className="w-full max-w-md bg-surface-container/80 backdrop-blur-xl p-10 rounded-3xl border border-white/10 shadow-2xl relative z-10 animate-in zoom-in-95 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
+            <div className="w-full max-w-md glass-panel p-10 rounded-3xl relative z-10 animate-glow-pulse animate-in zoom-in-95 duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
                 <div className="text-center mb-10">
-                    <svg viewBox="0 0 200 150" className="w-24 h-16 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M 20 120 A 80 80 0 0 1 180 120" fill="none" stroke="#2563eb" strokeWidth="8" strokeLinecap="round"/>
-                        <path d="M 35 120 A 65 65 0 0 1 165 120" fill="none" stroke="#dc2626" strokeWidth="8" strokeLinecap="round"/>
-                        <g transform="translate(100, 60) rotate(15) scale(0.6)">
-                        <path d="M -80 -80 L 80 -40 L 0 60 Z" fill="#fbbf24" stroke="#d97706" strokeWidth="4" strokeLinejoin="round"/>
-                        <path d="M -80 -80 C -40 -100 40 -80 80 -40 L -80 -80" fill="#f59e0b" stroke="#d97706" strokeWidth="12" strokeLinecap="round"/>
-                        <circle cx="-30" cy="-30" r="12" fill="#dc2626" />
-                        <circle cx="20" cy="-10" r="12" fill="#dc2626" />
-                        <circle cx="-10" cy="15" r="12" fill="#dc2626" />
-                        <path d="M -40 20 C -40 50 -20 70 0 60 C 20 50 10 30 20 10" fill="#fbbf24" stroke="#d97706" strokeWidth="4"/>
-                        </g>
-                    </svg>
-                    <h1 className="text-3xl font-display font-black tracking-tight mb-2">Bienvenido</h1>
-                    <p className="text-gray-400 font-medium">Inicia sesión o crea tu cuenta</p>
+                    <img 
+                        src="/logo.jpg" 
+                        alt="Mamma Mia Logo" 
+                        className="w-32 h-32 mx-auto mb-4 object-contain drop-shadow-[0_0_15px_rgba(245,166,35,0.4)] rounded-2xl"
+                    />
+                    <h1 className="text-4xl font-display font-black tracking-tight mb-2 text-gradient-gold">Bienvenido</h1>
+                    <p className="text-gray-400/80 font-medium text-sm">Inicia sesión o crea tu cuenta</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -213,7 +219,7 @@ const Login = () => {
                                 type="tel" 
                                 value={phone}
                                 onChange={e => setPhone(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium"
+                                className="w-full glass-input rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium"
                                 placeholder="600 000 000"
                                 required
                             />
@@ -228,7 +234,7 @@ const Login = () => {
                                     type="text" 
                                     value={name}
                                     onChange={e => setName(e.target.value)}
-                                    className="w-full bg-black/40 border border-brand-yellow/30 rounded-2xl py-4 px-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-yellow transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium"
+                                    className="w-full glass-input rounded-2xl py-4 px-4 text-white placeholder:text-gray-600 focus:outline-none transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium"
                                     placeholder="Tu nombre (nuevo usuario)"
                                     required={isNewUser}
                                 />
@@ -239,7 +245,7 @@ const Login = () => {
                                     type="text" 
                                     value={address}
                                     onChange={e => setAddress(e.target.value)}
-                                    className="w-full bg-black/40 border border-brand-yellow/30 rounded-2xl py-4 px-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-yellow transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium"
+                                    className="w-full glass-input rounded-2xl py-4 px-4 text-white placeholder:text-gray-600 focus:outline-none transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium"
                                     placeholder="Calle, Número..."
                                 />
                             </div>
@@ -253,7 +259,7 @@ const Login = () => {
                                 type="password" 
                                 value={pin}
                                 onChange={e => setPin(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-4 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium tracking-[0.2em]"
+                                className="w-full glass-input rounded-2xl py-4 pl-4 pr-4 text-white placeholder:text-gray-600 focus:outline-none transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] font-medium tracking-[0.2em]"
                                 placeholder="••••"
                                 maxLength={4}
                                 required
@@ -265,7 +271,7 @@ const Login = () => {
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_0_30px_rgba(255,228,175,0.2)] disabled:opacity-50 disabled:hover:scale-100"
+                        className="w-full bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-red-light text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] glow-gold disabled:opacity-50 disabled:hover:scale-100 animate-gradient-shift"
                     >
                         {loading ? 'Accediendo...' : (isNewUser ? 'Crear Cuenta y Entrar' : 'Entrar')}
                     </button>
@@ -275,7 +281,7 @@ const Login = () => {
                             ← Volver al Menú sin registro
                         </button>
                         <p className="text-[10px] text-center text-gray-400 font-bold uppercase tracking-wider">Cuentas de prueba:</p>
-                        <div className="grid grid-cols-2 gap-2 text-[10px] bg-black/20 p-4 rounded-xl border border-white/5 text-gray-400">
+                        <div className="grid grid-cols-2 gap-2 text-[10px] glass-panel-light p-4 rounded-xl text-gray-400">
                             <div><span className="font-black text-white">Jefe:</span> 000000000</div>
                             <div><span className="font-black text-white">Camarero:</span> 600333444</div>
                             <div><span className="font-black text-white">Cocina:</span> 600555666</div>
@@ -380,7 +386,7 @@ const MenuItemCard = ({
       ref={ref}
       onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)}
       className={cn(
-        "bg-surface-container overflow-hidden border border-white/5 hover:border-brand-primary/30 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] group cursor-pointer active:scale-[0.98] hover:bg-surface-container-high shadow-2xl",
+        "bg-surface-container overflow-hidden border border-white/5 hover:border-brand-primary/20 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] group cursor-pointer active:scale-[0.98] hover:bg-surface-container-high shadow-2xl card-hover-3d",
         viewMode === 'list' ? 'flex flex-row items-center p-3 gap-4 rounded-3xl relative' : 'flex flex-col rounded-3xl'
       )}
     >
@@ -423,7 +429,7 @@ const MenuItemCard = ({
                    {item.name}
                    {viewMode === 'list' && Boolean(item.isPopular) && <span className="ml-2 text-[10px] text-brand-primary tracking-widest uppercase inline-block font-sans">Premium 🔥</span>}
                </h4>
-               {viewMode !== 'list' && <span className="text-xl font-display font-black text-brand-primary shrink-0">€{item.price.toFixed(2)}</span>}
+               {viewMode !== 'list' && <span className="text-xl font-display font-black text-gradient-gold shrink-0">€{item.price.toFixed(2)}</span>}
              </div>
              
              {viewMode !== 'list' && (
@@ -524,7 +530,7 @@ const MenuItemCard = ({
                    initial={{ opacity: 0, y: 10, scale: 0.8 }}
                    animate={{ opacity: 1, y: -40, scale: 1 }}
                    exit={{ opacity: 0 }}
-                   className="absolute bottom-12 right-0 text-white font-bold bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs shadow-xl border border-white/20 pointer-events-none"
+                   className="absolute bottom-12 right-0 text-black font-bold bg-gradient-to-r from-brand-primary to-brand-secondary backdrop-blur-md px-3 py-1 rounded-full text-xs shadow-xl border border-brand-primary/30 pointer-events-none animate-badge-pop"
                  >
                    Added
                  </motion.div>
@@ -621,9 +627,9 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", duration: 0.4, bounce: 0.15 }}
-            className="absolute bottom-20 right-0 w-[350px] shadow-2xl rounded-2xl overflow-hidden bg-surface-container border border-white/10 flex flex-col"
+            className="absolute bottom-20 right-0 w-[350px] shadow-2xl rounded-2xl overflow-hidden bg-surface-container/95 backdrop-blur-xl border border-brand-primary/15 flex flex-col"
           >
-            <div className="bg-brand-primary p-4 text-black flex items-center justify-between">
+            <div className="bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-red-light p-4 text-black flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bot className="w-6 h-6" />
                 <span className="font-bold text-lg leading-none pt-1 uppercase tracking-tight">Chef AI</span>
@@ -653,9 +659,9 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="bg-white/10 text-white rounded-xl rounded-bl-none px-4 py-2 text-sm flex gap-1 items-center h-9">
-                    <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.8 }} className="w-1.5 h-1.5 bg-white rounded-full" />
-                    <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.8, delay: 0.2 }} className="w-1.5 h-1.5 bg-white rounded-full" />
-                    <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.8, delay: 0.4 }} className="w-1.5 h-1.5 bg-white rounded-full" />
+                    <div className="w-2 h-2 bg-brand-primary rounded-full animate-wave-1" />
+                    <div className="w-2 h-2 bg-brand-secondary rounded-full animate-wave-2" />
+                    <div className="w-2 h-2 bg-brand-red-light rounded-full animate-wave-3" />
                   </div>
                 </div>
               )}
@@ -670,12 +676,12 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
                    onChange={e => setInput(e.target.value)}
                    onKeyDown={e => e.key === 'Enter' && handleSend()}
                    placeholder="Ej: Quiero una pizza..."
-                   className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-brand-primary placeholder-gray-500"
+                   className="flex-1 glass-input rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-brand-primary placeholder-gray-500"
                  />
                  <button 
                    onClick={handleSend}
                    disabled={isLoading || !input.trim()}
-                   className="bg-brand-primary text-black p-2.5 rounded-xl hover:bg-brand-yellow disabled:opacity-50 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
+                   className="bg-gradient-to-r from-brand-primary to-brand-secondary text-black p-2.5 rounded-xl hover:brightness-110 disabled:opacity-50 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
                  >
                    <Send className="w-4 h-4" />
                  </button>
@@ -686,7 +692,7 @@ const ChatWidget = ({ menuItems }: { menuItems: any[] }) => {
       </AnimatePresence>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-16 h-16 bg-brand-primary text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,228,175,0.4)] hover:scale-110 active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]"
+        className="w-16 h-16 bg-gradient-to-br from-brand-primary to-brand-red text-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,166,35,0.4)] hover:scale-110 active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] animate-glow-pulse"
       >
         <MessageSquare className="w-7 h-7" />
       </button>
@@ -817,8 +823,8 @@ const Menu = () => {
            initial={{ opacity: 0, y: 20 }}
            animate={{ opacity: 1, y: 0 }}
            transition={{ duration: 0.6, delay: 0.4 }}
-           className="text-5xl sm:text-6xl md:text-8xl font-display text-brand-primary font-black mb-6 tracking-tight leading-[1] uppercase w-full break-words"
-           style={{ textShadow: '0 4px 30px rgba(255, 193, 7, 0.4)' }}
+           className="text-5xl sm:text-6xl md:text-8xl font-display text-gradient-gold font-black mb-6 tracking-tight leading-[1] uppercase w-full break-words"
+           style={{}}
         >
           MAMMA MIA!
         </motion.h2>
@@ -840,7 +846,7 @@ const Menu = () => {
         >
           <button 
              onClick={() => window.scrollTo({top: 600, behavior: 'smooth'})} 
-             className="px-8 py-4 bg-brand-primary text-black font-black uppercase tracking-widest rounded-2xl text-sm hover:scale-105 active:scale-95 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-xl shadow-brand-primary/20"
+             className="px-8 py-4 bg-gradient-to-r from-brand-primary to-brand-secondary text-black font-black uppercase tracking-widest rounded-2xl text-sm hover:scale-105 active:scale-95 transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] glow-gold animate-gradient-shift"
           >
             Ver Carta
           </button>
@@ -857,7 +863,7 @@ const Menu = () => {
             placeholder="Buscar en la carta (ej. Peperoni, Queso)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="relative w-full bg-surface-container-high/90 backdrop-blur-md border border-white/10 text-white rounded-full py-4 pl-14 pr-4 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary placeholder-gray-500 font-medium transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] text-lg shadow-[0_8px_32px_rgba(0,0,0,0.8)]"
+            className="relative w-full glass-input rounded-full py-4 pl-14 pr-4 focus:outline-none placeholder-gray-500 font-medium transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] text-lg shadow-[0_8px_32px_rgba(0,0,0,0.8)]"
          />
          <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-primary transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
             <Pizza size={24} />
@@ -870,7 +876,7 @@ const Menu = () => {
               className={cn(
                   "snap-center shrink-0 px-6 py-3 rounded-full font-black text-xs tracking-[0.2em] uppercase transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap border-2",
                   activeCategory === 'TODAS' 
-                      ? "bg-brand-primary border-brand-primary text-black shadow-[0_0_20px_rgba(255,193,7,0.4)]" 
+                      ? "bg-gradient-to-r from-brand-primary to-brand-secondary border-brand-primary text-black glow-gold" 
                       : "bg-surface-base border-white/10 text-gray-400 hover:border-brand-primary/50 hover:text-brand-primary"
               )}
           >
@@ -883,7 +889,7 @@ const Menu = () => {
                   className={cn(
                       "snap-center shrink-0 px-6 py-3 rounded-full font-black text-xs tracking-[0.2em] uppercase transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap border-2",
                       activeCategory === cat 
-                          ? "bg-brand-primary border-brand-primary text-black shadow-[0_0_20px_rgba(255,193,7,0.4)]" 
+                          ? "bg-gradient-to-r from-brand-primary to-brand-secondary border-brand-primary text-black glow-gold" 
                           : "bg-surface-base border-white/10 text-gray-400 hover:border-brand-primary/50 hover:text-brand-primary"
                   )}
               >
@@ -982,9 +988,9 @@ const Menu = () => {
       return (
         <section key={category} className="scroll-m-24" id={category.replace(/\s+/g, '-').toLowerCase()}>
           {activeCategory === 'TODAS' && (
-              <h3 className="text-4xl md:text-5xl font-display font-black text-brand-primary mb-10 flex items-center justify-between uppercase tracking-tighter">
+              <h3 className="text-4xl md:text-5xl font-display font-black text-gradient-gold mb-10 flex items-center justify-between uppercase tracking-tighter">
                 {category}
-                <div className="h-px bg-gradient-to-r from-brand-primary/50 to-transparent flex-1 ml-6 mt-2 hidden sm:block"></div>
+                <div className="h-px bg-gradient-to-r from-brand-primary/30 via-brand-secondary/20 to-transparent flex-1 ml-6 mt-2 hidden sm:block"></div>
               </h3>
           )}
           <motion.div 
@@ -1063,7 +1069,7 @@ const Menu = () => {
     <ChatWidget menuItems={menuItems} />
 
     {/* Bottom Mobile Tab Bar (App-style) */}
-    <div className="fixed bottom-0 left-0 right-0 z-[60] bg-surface-container-high/90 backdrop-blur-xl border-t border-white/10 pb-safe md:hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-[60] bg-surface-container/85 backdrop-blur-2xl border-t border-brand-primary/10 pb-safe md:hidden">
          <div className="flex justify-between items-center px-6 py-2 relative h-[72px]">
             <button onClick={() => navigate('/')} className="flex flex-col items-center justify-center gap-1 text-brand-primary relative z-10 w-16">
                <Home size={24} className="stroke-[2px]" />
@@ -1078,13 +1084,13 @@ const Menu = () => {
                <button 
                   onClick={() => navigate('/cart')} 
                   className={cn(
-                     "w-16 h-16 rounded-full bg-surface-container text-gray-400 shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex items-center justify-center relative transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] border-4 border-surface-container-high",
-                     cart.length > 0 ? "scale-110 bg-brand-blue text-white shadow-[0_8px_30px_rgba(29,112,184,0.4)]" : "hover:text-white"
+                     "w-16 h-16 rounded-full bg-surface-container text-gray-400 shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex items-center justify-center relative transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] border-4 border-surface-container",
+                     cart.length > 0 ? "scale-110 bg-gradient-to-br from-brand-primary to-brand-red text-white glow-gold-intense" : "hover:text-white"
                   )}
                >
                   <ShoppingCart size={24} className="stroke-[2.5px] ml-[-2px]" />
                   {cart.length > 0 && (
-                     <span className="absolute -top-1 -right-1 bg-brand-primary text-black w-6 h-6 flex items-center justify-center rounded-full font-black text-xs border-2 border-surface-container-high">
+                     <span className="absolute -top-1 -right-1 bg-brand-red text-white w-6 h-6 flex items-center justify-center rounded-full font-black text-xs border-2 border-surface-container animate-badge-pop">
                         {cart.length}
                      </span>
                   )}
