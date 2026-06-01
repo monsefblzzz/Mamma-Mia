@@ -1,35 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,100..900;1,100..900&family=Inter:wght@100..900&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Playfair Display", serif;
+  --font-display: "Epilogue", ui-sans-serif, sans-serif;
 
-  --color-brand-primary: #F5A623;
-  --color-brand-yellow: #FFCC02;
-  --color-brand-gold: #D4951A;
-  --color-brand-red: #D4380D;
-  --color-brand-red-light: #FF6B4A;
-  --color-brand-blue: #1B4F72;
-  --color-brand-light-blue: #2E86C1;
-  --color-brand-brown: #8B5E3C;
-  --color-brand-cream: #FFF8E7;
-  --color-brand-olive: #6B8E23;
-  --color-brand-secondary: #FF8C42;
-  --color-surface-base: #0C0A09;
-  --color-surface-container: #1A1714;
-  --color-surface-container-high: #252220;
-  --color-surface-bright: #3D3835;
-  --color-border-subtle: rgba(245, 166, 35, 0.08);
+  --color-brand-primary: #FFC107;
+  --color-brand-yellow: #FFC107;
+  --color-brand-red: #E52521;
+  --color-brand-blue: #0050A0;
+  --color-brand-light-blue: #1D70B8;
+  --color-brand-brown: #C78E3C;
+  --color-surface-base: #000000;
+  --color-surface-container: #0A0A0A;
+  --color-surface-container-high: #141414;
+  --color-surface-bright: #333333;
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
 }
 
 @layer base {
   body {
-    @apply bg-surface-base text-white font-sans antialiased;
-    background-image: 
-      radial-gradient(ellipse at 20% 50%, rgba(245, 166, 35, 0.03) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 20%, rgba(212, 56, 13, 0.02) 0%, transparent 50%),
-      url('https://www.transparenttextures.com/patterns/stardust.png');
+    @apply bg-surface-base text-white font-sans antialiased selection:bg-brand-primary selection:text-black;
+    background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
     background-attachment: fixed;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -41,180 +33,42 @@
   }
 }
 
-/* ============================================
-   GLASSMORPHISM UTILITIES
-   ============================================ */
 .glass-panel {
-  background: rgba(26, 23, 20, 0.6);
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  border: 1px solid rgba(245, 166, 35, 0.08);
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  @apply bg-surface-container/60 backdrop-blur-xl border border-white/5 shadow-2xl;
 }
 
-.glass-panel-light {
-  background: rgba(37, 34, 32, 0.7);
-  backdrop-filter: blur(20px) saturate(1.3);
-  -webkit-backdrop-filter: blur(20px) saturate(1.3);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-}
-
-.glass-input {
-  background: rgba(12, 10, 9, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.glass-input:focus {
-  border-color: rgba(245, 166, 35, 0.5);
-  box-shadow: 
-    0 0 0 3px rgba(245, 166, 35, 0.1),
-    0 0 30px rgba(245, 166, 35, 0.08);
-}
-
-/* ============================================
-   GLOW EFFECTS
-   ============================================ */
 .neon-glow {
-  box-shadow: 
-    0 0 20px rgba(245, 166, 35, 0.08),
-    0 0 60px rgba(245, 166, 35, 0.04);
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
 }
 
 .neon-glow-red {
-  box-shadow: 0 0 20px rgba(212, 56, 13, 0.25);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
 }
 
-.glow-gold {
-  box-shadow: 
-    0 0 20px rgba(245, 166, 35, 0.3),
-    0 0 60px rgba(245, 166, 35, 0.1);
-}
-
-.glow-gold-intense {
-  box-shadow: 
-    0 0 30px rgba(245, 166, 35, 0.5),
-    0 0 80px rgba(245, 166, 35, 0.2),
-    0 4px 20px rgba(0, 0, 0, 0.5);
-}
-
-/* ============================================
-   TEXT EFFECTS
-   ============================================ */
-.text-gradient-gold {
-  background: linear-gradient(135deg, #FFCC02 0%, #F5A623 40%, #D4380D 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.text-gradient-warm {
-  background: linear-gradient(135deg, #FFF8E7 0%, #F5A623 50%, #FF8C42 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ============================================
-   GLOBAL KEYFRAME ANIMATIONS
-   ============================================ */
-@keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  33% { transform: translateY(-12px) rotate(2deg); }
-  66% { transform: translateY(6px) rotate(-1deg); }
-}
-
-@keyframes float-slow {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(3deg); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-
-@keyframes glow-pulse {
-  0%, 100% { 
-    box-shadow: 0 0 20px rgba(245, 166, 35, 0.2), 0 0 60px rgba(245, 166, 35, 0.05);
-    border-color: rgba(245, 166, 35, 0.15);
+@media print {
+  body * {
+    visibility: hidden;
   }
-  50% { 
-    box-shadow: 0 0 30px rgba(245, 166, 35, 0.35), 0 0 80px rgba(245, 166, 35, 0.1);
-    border-color: rgba(245, 166, 35, 0.3);
+  #print-root, #print-root * {
+    visibility: visible;
+  }
+  #print-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white;
+    color: black;
+    padding: 20px;
+    margin: 0;
   }
 }
 
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+::selection {
+  background-color: rgba(255,255,255,0.9);
+  color: #000;
 }
 
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes bounce-in {
-  0% { transform: scale(0.3); opacity: 0; }
-  50% { transform: scale(1.1); }
-  70% { transform: scale(0.9); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes badge-pop {
-  0% { transform: scale(0.5); opacity: 0; }
-  60% { transform: scale(1.2); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes wave {
-  0%, 60%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-8px); }
-}
-
-.animate-float { animation: float 6s ease-in-out infinite; }
-.animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
-.animate-shimmer { 
-  animation: shimmer 3s ease-in-out infinite;
-  background-size: 200% 100%;
-}
-.animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
-.animate-gradient-shift { 
-  animation: gradient-shift 4s ease-in-out infinite;
-  background-size: 200% 200%;
-}
-.animate-spin-slow { animation: spin-slow 20s linear infinite; }
-.animate-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.23, 1, 0.32, 1); }
-.animate-badge-pop { animation: badge-pop 0.4s cubic-bezier(0.23, 1, 0.32, 1); }
-
-.animate-wave-1 { animation: wave 1.4s ease-in-out infinite; }
-.animate-wave-2 { animation: wave 1.4s ease-in-out infinite 0.15s; }
-.animate-wave-3 { animation: wave 1.4s ease-in-out infinite 0.3s; }
-
-/* ============================================
-   CARD EFFECTS
-   ============================================ */
-.card-hover-3d {
-  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-  transform-style: preserve-3d;
-  perspective: 1000px;
-}
-.card-hover-3d:hover {
-  transform: translateY(-4px) rotateX(1deg) rotateY(-1deg);
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.4),
-    0 0 30px rgba(245, 166, 35, 0.06);
-}
-
-/* ============================================
-   SCROLLBAR
-   ============================================ */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
@@ -222,39 +76,25 @@
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(245, 166, 35, 0.2), rgba(245, 166, 35, 0.05));
+  background-color: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(245, 166, 35, 0.4), rgba(245, 166, 35, 0.15));
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
-.hide-scrollbar::-webkit-scrollbar { display: none; }
-.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* ============================================
-   SELECTION
-   ============================================ */
-::selection {
-  background-color: rgba(245, 166, 35, 0.9);
-  color: #0C0A09;
-}
-
-/* ============================================
-   NOTIFICATION & CMS (preserved)
-   ============================================ */
 @keyframes notificationPulse {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.7);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
   }
   50% {
     transform: scale(1.2);
-    box-shadow: 0 0 0 10px rgba(245, 166, 35, 0);
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(245, 166, 35, 0);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
   }
 }
 
@@ -283,33 +123,4 @@
 .menu-item-image {
   filter: none !important;
   -webkit-filter: none !important;
-}
-
-/* ============================================
-   PRINT
-   ============================================ */
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  #print-root, #print-root * {
-    visibility: visible;
-  }
-  #print-root {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    background: white;
-    color: black;
-    padding: 20px;
-    margin: 0;
-  }
-}
-
-/* ============================================
-   SAFE AREA (iOS)
-   ============================================ */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }

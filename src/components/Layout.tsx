@@ -130,7 +130,7 @@ export function Layout() {
   const lowStockCount = inventory.filter(i => i.status === 'Low Stock' || i.status === 'Out of Stock').length;
 
   return (
-    <div className="flex min-h-screen w-full max-w-[100vw] bg-surface-base text-white relative font-sans selection:bg-white selection:text-black">
+    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-surface-base text-white relative font-sans selection:bg-white selection:text-black">
       <AnimatePresence>
         {showWelcomeToast && (
           <motion.div 
@@ -139,7 +139,7 @@ export function Layout() {
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             className="fixed top-8 right-8 z-[100] max-w-sm"
           >
-            <div className="glass-panel p-5 rounded-2xl shadow-2xl flex items-start gap-4 animate-glow-pulse">
+            <div className="bg-surface-container border border-white/10 p-5 rounded-2xl shadow-2xl flex items-start gap-4">
               <div className="flex-1 pr-6">
                 <h4 className="font-medium text-white mb-1">Oferta de bienvenida activa</h4>
                 <p className="text-sm text-gray-400">10% de descuento automático en caja.</p>
@@ -153,13 +153,13 @@ export function Layout() {
       </AnimatePresence>
 
       {/* Sidebar Desktop */}
-      <aside className="hidden lg:flex flex-col w-72 border-r border-brand-primary/10 sticky top-0 h-screen bg-surface-container/40 backdrop-blur-xl">
+      <aside className="hidden lg:flex flex-col w-64 border-r border-white/5 sticky top-0 h-screen bg-surface-base">
         <div className="p-8 pb-6">
           <Link to="/" className="flex items-center gap-4 group active:scale-[0.97] transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
             <Logo />
             <div>
-              <h1 className="text-xl font-display font-black text-gradient-gold leading-none">MAMMA MIA!</h1>
-              <p className="text-[10px] text-brand-primary/60 tracking-[0.3em] font-sans font-bold mt-1.5">LA NOSTRA PIZZA</p>
+              <h1 className="text-xl font-display font-black text-brand-primary leading-none">MAMMA MIA!</h1>
+              <p className="text-[10px] text-white tracking-[0.2em] font-sans opacity-80 mt-1">LA NOSTRA PIZZA</p>
             </div>
           </Link>
         </div>
@@ -172,8 +172,8 @@ export function Layout() {
               className={({ isActive }) => cn(
                 "group flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] text-sm font-bold uppercase tracking-widest",
                 isActive 
-                  ? "bg-gradient-to-r from-brand-primary to-brand-secondary text-black shadow-[0_0_20px_rgba(245,166,35,0.3)] glow-gold" 
-                  : "text-gray-500 hover:text-brand-cream hover:bg-white/5 border border-transparent hover:border-brand-primary/15"
+                  ? "bg-brand-primary text-black shadow-[0_0_20px_rgba(255,193,7,0.4)]" 
+                  : "text-gray-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
               )}
             >
               <item.icon size={18} strokeWidth={2.5} className="group-hover:scale-90 transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]" />
@@ -193,19 +193,11 @@ export function Layout() {
         </nav>
 
         <div className="p-4 border-t border-white/5">
-          {!user && (
-            <Link 
-              to="/login"
-              className="flex justify-center items-center w-full mb-3 bg-gradient-to-r from-brand-primary to-brand-secondary text-black font-black py-3 rounded-xl hover:scale-[1.02] active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] glow-gold text-xs uppercase tracking-widest"
-            >
-              Iniciar Sesión
-            </Link>
-          )}
           <NavLink 
             to="/profile"
             className="flex items-center gap-3 p-3 rounded-xl bg-surface-container border border-white/5 hover:border-white/10 transition-colors duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer active:scale-[0.97] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group"
           >
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-primary to-brand-red text-white flex items-center justify-center font-bold text-sm ring-2 ring-brand-primary/20">
+            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold text-sm">
               {user ? user.name.charAt(0).toUpperCase() : '?'}
             </div>
             <div className="flex-1 overflow-hidden">
@@ -218,14 +210,14 @@ export function Layout() {
       </aside>
 
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-surface-container/70 backdrop-blur-xl border-b border-brand-primary/10 flex items-center justify-between px-6 z-50">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-surface-base/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-50">
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-white">
           <MenuIcon size={20} />
         </button>
         <div className="flex items-center gap-3">
-                <h1 className="text-[10px] font-bold tracking-[0.3em] uppercase text-gradient-gold">LA NOSTRA PIZZA</h1>
+                <h1 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-primary">LA NOSTRA PIZZA</h1>
         </div>
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-primary to-brand-red text-white flex items-center justify-center font-bold text-xs">
+        <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs">
           {user ? user.name.charAt(0).toUpperCase() : '?'}
         </div>
       </div>
@@ -245,7 +237,7 @@ export function Layout() {
                animate={{ x: 0 }}
                exit={{ x: '-100%' }}
                transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-               className="w-[80vw] max-w-sm h-full bg-surface-container/95 backdrop-blur-2xl border-r border-brand-primary/10 p-6 flex flex-col" 
+               className="w-[80vw] max-w-sm h-full bg-surface-base border-r border-white/10 p-6 flex flex-col" 
                onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-8">
@@ -263,7 +255,7 @@ export function Layout() {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={({ isActive }) => cn(
                       "flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] text-sm",
-                      isActive ? "bg-gradient-to-r from-brand-primary to-brand-secondary text-black font-semibold glow-gold" : "text-gray-400 hover:text-brand-cream"
+                      isActive ? "bg-white text-black font-semibold" : "text-gray-400 hover:text-white"
                     )}
                   >
                     <item.icon size={18} strokeWidth={2.5} className="group-hover:scale-90 transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]" />
@@ -271,17 +263,6 @@ export function Layout() {
                   </NavLink>
                 ))}
               </nav>
-              {!user && (
-                <div className="pt-6 mt-6 border-t border-white/5">
-                  <Link 
-                    to="/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex justify-center items-center w-full bg-gradient-to-r from-brand-primary to-brand-secondary text-black font-black py-4 rounded-xl hover:scale-[1.02] active:scale-[0.97] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] glow-gold text-sm uppercase tracking-widest"
-                  >
-                    Iniciar Sesión
-                  </Link>
-                </div>
-              )}
             </motion.aside>
           </motion.div>
         )}
@@ -293,7 +274,7 @@ export function Layout() {
         </div>
       </main>
 
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-surface-container/80 backdrop-blur-2xl border-t border-brand-primary/10 flex items-center justify-around px-2 z-40 pb-safe">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-surface-base/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-2 z-40 pb-safe">
         {allowedNavItems.slice(0, 5).map((item) => (
           <NavLink
             key={item.to}
